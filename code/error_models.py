@@ -10,7 +10,7 @@
  # the Free Software Foundation, either version 3 of the License, or
  # (at your option) any later version.
  
- from random import random, randint
+from random import random, randint
 from math import *
 
 from common import *

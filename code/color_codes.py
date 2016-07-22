@@ -10,7 +10,7 @@
  # the Free Software Foundation, either version 3 of the License, or
  # (at your option) any later version.
  
- from math import *
+from math import *
 import networkx as nx
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import *

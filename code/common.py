@@ -10,7 +10,7 @@
  # the Free Software Foundation, either version 3 of the License, or
  # (at your option) any later version.
  
- import networkx as nx
+import networkx as nx
 from random import random, randint
 from math import *
 import matplotlib.pyplot as plt
