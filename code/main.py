@@ -17,8 +17,10 @@ from kitaev import *
 from color_codes import *
 
 def main():
-	code = KSC(10, 5)
-	model = CodeCapacity(.05)
+	code = Toric_4_8_8(12, 5)
+	# model = CodeCapacity(.05)
+	for node in code.stabilizers['red']:
+		print code.stabilizers['red'][node].planar_coords
 	code.plot_primal('Z', 1, 'Primal Lattice')
 	plt.show()
 

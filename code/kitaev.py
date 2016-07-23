@@ -191,5 +191,6 @@ class KTC(ToricCode, KitaevCode):
 					order = Order(stabilizer_data)
 					toric_center = PlanarToToric(center, length)
 					self.stabilizers[type][toric_center.position] = Stabilizer(toric_center,stabilizer_data, order)
-
+					# Save planar coordinates 
+					self.stabilizers[type][toric_center.position].planar_coords = position
 				

@@ -107,19 +107,24 @@ class Code:
 				self.generatePrimalEdges(stabilizer)
 
 
-	def distance(self, qubit1, qubit2):
-		if qubit1 in self.dual.nodes() and  qubit2 in self.dual.nodes():
+	def distance(self, qubit1, qubit2, lattice_type = 'dual'):
+		if lattice_type == 'dual':
+			lattice = self.dual.copy()
+		else:
+			lattice = self.shrunk[lattice_type].copy()
+			
+		if qubit1 in lattice.nodes() and  qubit2 in lattice.nodes():
 			return nx.shortest_path_length(self.dual, qubit1, qubit2)
-		elif qubit1 in self.dual.nodes() and qubit2 not in self.dual.nodes():
+		elif qubit1 in lattice.nodes() and qubit2 not in lattice.nodes():
 			qubit2 = self.external[qubit2.type][qubit2]
-			return nx.shortest_path_length(self.dual, qubit1, qubit2) + 1
-		elif qubit1 not in self.dual.nodes() and qubit2 in self.dual.nodes():
+			return nx.shortest_path_length(lattice, qubit1, qubit2) + 1
+		elif qubit1 not in lattice.nodes() and qubit2 in lattice.nodes():
 			qubit1 = self.external[qubit1.type][qubit1]
-			return nx.shortest_path_length(self.dual, qubit1, qubit2) + 1
+			return nx.shortest_path_length(lattice, qubit1, qubit2) + 1
  		else:
  			qubit1 = self.external[qubit1.type][qubit1]
  			qubit2 = self.external[qubit2.type][qubit2]
- 			return nx.shortest_path_length(self.dual, qubit1, qubit2) + 2
+ 			return nx.shortest_path_length(lattice, qubit1, qubit2) + 2
 
 	def plot(self, charge_type, plot_number, title, lattice = 'primal'):
 		if lattice == 'primal':

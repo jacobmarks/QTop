@@ -164,37 +164,43 @@ class ToricCode:
 
 	
 
-	# def hasLogicalError(self, charge_type):
-	# 	# Make graph from subgraph of dual using only stabilizers with some, but not all
-	# 	# of their member data qubits qith non-zero charge
-	# 	# look for self-loops with non-trivial winding number
-	# 	# if one exists, we have a logical error
+	def hasLogicalError(self, charge_type):
+		# Make graph from subgraph of dual using only stabilizers with some, but not all
+		# of their member data qubits qith non-zero charge
+		# look for self-loops with non-trivial winding number
+		# if one exists, we have a logical error
 
-	# 	# store list of positions of nonzero data
-	# 	charged_data = []
-	# 	for data in self.primal.nodes():
-	# 		if data.charge[charge_type] != 0:
-	# 			charged_data.append(data.position)
+		# store list of positions of nonzero data
+		charged_data = []
+		for data in self.primal.nodes():
+			if data.charge[charge_type] != 0:
+				charged_data.append(data.position)
 
-	# 	subgraph_nodes = []
+		subgraph_nodes = []
+		for measure in self.dual:
+			HasTrivialData, HasNontrivialData = False, False
+			for type in self.stabilizers:
+				if measure.position in self.stabilizers[type]:
+					stabilizer = self.stabilizers[type][measure.position]
+			
+			for data in stabilizer.data:
+				if data.position in charged_data:
+					HasNontrivialData = True
+				else:
+					HasTrivialData = True
 
-	# 	for type in self.dual:
-	# 		for measure in self.dual:
-	# 			HasTrivialData, HasNontrivialData = False, False
-	# 			stabilizer = self.stabilizers[measure.position]
-	# 			for data in stabilizer.data:
-	# 				if data.position in charged_data:
-	# 					HasNontrivialData = True
-	# 				else:
-	# 					HasTrivialData = True
+			if HasTrivialData and HasNontrivialData:
+				subgraph_nodes.append(measure)
 
-	# 			if HasTrivialData and HasNontrivialData:
-	# 				subgraph_nodes.append(measure)
 
-	# 		Homologies = self.dual.subgraph(subgraph_nodes)
 
-	# 		for edge in Homologies.edges():
-	# 			print edge[0].position, edge[1].position
+		Homologies = self.dual.subgraph(subgraph_nodes)
+		# Find all cycles, then decide if each is trivial
+		for cycle in nx.cycle_basis(Homologies):
+			if notTrivialCycle(self, cycle):
+				return True
+
+		return False
 
 
 	def plot_primal(self, charge_type, plot_number, title):
@@ -298,3 +304,54 @@ def ToricCoordinates(qubit,length1, length2 = False):
 def PlanarToToric(qubit, length1, length2 = False):
 	qubit.position = ToricCoordinates(qubit, length1, length2)
 	return qubit
+
+
+def notTrivialCycle(self, cycle):
+	# If odd number of crossing points for x or y, 
+	# then we have a non-trival homology
+	# i.e. a logical operator
+	x_crosses, y_crosses = 0, 0
+
+	length1 = self.length1
+	if self.length2 != False:
+		length2 = self.length2
+	else:
+		length2 == self.length1
+
+	cycle_length = len(cycle)
+	for link in cycle_length:
+		node1 = cycle[link]
+		node2 = cycle[link%cycle_length]
+		type1, type2 = self.dual.node[node1]['type'], self.dual.node[node2]['type']
+
+		pos1 = self.stabilizers[type1][node1.position].planar_coords
+		pos2 = self.stabilizers[type1][node2.position].planar_coords
+
+		x_dist, z_dist = abs(pos2[0] - pos1[0]]), abs(pos2[1] - pos1[1]])
+		if (pos1[0] < x_dist and (length1 - pos2[0]) < x_dist):
+			x_crosses += 1
+		elif (pos2[0] < x_dist and (length1 - pos1[0]) < x_dist):
+			x_crosses += 1
+
+		if (pos1[1] < y_dist and (length2 - pos2[1]) < y_dist):
+			y_crosses += 1
+		elif (pos2[1] < y_dist and (length2 - pos1[1]) < y_dist):
+			y_crosses += 1
+
+	if x_crosses%2 == 1 or y_crosses%2 == 1:
+		return True
+	else:
+		return False
+
+
+
+
+
+
+
+
+
+
+
+
+

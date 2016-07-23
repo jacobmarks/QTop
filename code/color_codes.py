@@ -280,7 +280,7 @@ class Toric_4_8_8(ToricCode, Color_4_8_8):
 					order = Order(stabilizer_data)
 					toric_center = PlanarToToric(center, length)
 					self.stabilizers[type][toric_center.position] = Stabilizer(toric_center,stabilizer_data, order)
-
+					self.stabilizers[type][toric_center.position].planar_coords = position
 class Color_6_6_6(ColorCode):
 
 	def __init__(self, depth, dimension = 2):
@@ -398,7 +398,7 @@ class Toric_6_6_6(ToricCode, Color_6_6_6):
 					toric_center = PlanarToToric(center, length1, length2)
 					order = Order(data)
 					self.stabilizers[type][toric_center.position] = Stabilizer(toric_center,data, order)
-
+					self.stabilizers[type][toric_center.position].planar_coords = position
 
 
 
@@ -489,3 +489,7 @@ class Toric_4_6_12(ToricCode, Color_4_6_12):
 					order = Order(stabilizer_data)
 					toric_center = PlanarToToric(center, length1, length2)
 					self.stabilizers[type][toric_center.position] = Stabilizer(toric_center,stabilizer_data, order)
+					self.stabilizers[type][toric_center.position].planar_coords = position
+
+
+					
