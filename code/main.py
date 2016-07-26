@@ -17,7 +17,7 @@ from kitaev import *
 from color_codes import *
 
 def main():
-	code = Toric_4_8_8(12, 5)
+	code = Toric_4_8_8(24, 5)
 	# model = CodeCapacity(.05)
 	for node in code.stabilizers['red']:
 		print code.stabilizers['red'][node].planar_coords

@@ -311,7 +311,7 @@ def notTrivialCycle(self, cycle):
 	# then we have a non-trival homology
 	# i.e. a logical operator
 	x_crosses, y_crosses = 0, 0
-
+	dim = self.dimension
 	length1 = self.length1
 	if self.length2 != False:
 		length2 = self.length2
@@ -327,18 +327,18 @@ def notTrivialCycle(self, cycle):
 		pos1 = self.stabilizers[type1][node1.position].planar_coords
 		pos2 = self.stabilizers[type1][node2.position].planar_coords
 
-		x_dist, z_dist = abs(pos2[0] - pos1[0]]), abs(pos2[1] - pos1[1]])
+		x_dist, z_dist = abs(pos2[0] - pos1[0]), abs(pos2[1] - pos1[1])
 		if (pos1[0] < x_dist and (length1 - pos2[0]) < x_dist):
 			x_crosses += 1
 		elif (pos2[0] < x_dist and (length1 - pos1[0]) < x_dist):
-			x_crosses += 1
+			x_crosses -= 1
 
 		if (pos1[1] < y_dist and (length2 - pos2[1]) < y_dist):
 			y_crosses += 1
 		elif (pos2[1] < y_dist and (length2 - pos1[1]) < y_dist):
-			y_crosses += 1
+			y_crosses -= 1
 
-	if x_crosses%2 == 1 or y_crosses%2 == 1:
+	if x_crosses%dim != 0 or y_crosses%dim != 0:
 		return True
 	else:
 		return False
