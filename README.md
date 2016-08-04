@@ -116,8 +116,48 @@ after this, errors in our code, i.e. non-trivial eigenvalue measurements, are in
 
 ![alt text](/visualizations/KSC_with_errors.png)
 
+Our error syndrome is thus
 
+```python
+s = syndrome(code)
+```
 
+## Decoders
+
+At this point, we have a code with errors given by the action of our error model. We want to return the code to its codespace by correcting for those errors in an efficient and effective way. To do this, we need to apply homologically trivial correction chains. This error correction is purely classical, and comes in two components:
+
+1. Clustering Algorithm
+2. Recovery Procedure
+
+The clustering algorithm splits the syndrome into smaller, localized groups of measurement qudits. For qubits, this clustering can be performed using Edmunds' Blossom algorithm for min weight perfect matching, in which case each cluster consists of 2 qubits. Alternatively, renormalization group clustering works for all qudit dimensions by iteratively increasing the distance scale, and identifying all neutral clusters at a given scale.
+
+Because we have chosen a code with dimension 3, we will use a hard decision renormalization group (HDRG) clustering:
+
+```python
+clustering = HDRG_cluster()
+```
+
+Recovery is the process through which the code is returned to its codespace. In the case of surface codes, `surface_recovery()` involves syndrome transportation, fusion and annihilation. For color codes, the recovery procedure identifies closed loops of a given charge on the dual lattice. `fill_recovery` recovers the charge of each data qubit within the loop. 
+
+We can create a surface code `decoder` object from our clustering:
+
+```python
+decoder = surface_decoder(clustering)
+```
+
+Then we perform error correction by applying this decoder:
+
+```python
+code = decoder(code, syndrome)
+```
+
+Finally, we can assess our decoding by checking to see if any logical errors have occurred. 
+
+```python
+print = Assessment(code)
+```
+
+---
 
 
 
