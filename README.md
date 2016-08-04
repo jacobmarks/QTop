@@ -68,7 +68,7 @@ By default, the measurement order is counterclockwise, but one can program more 
 
 In QTop, `Code` is the base class for topological error correcting codes. From this, surface and color codes are derived as subclasses. In addition, this base class can easily be extended to 3D color codes, gauge color codes, and more exotic topological codes. `Code` contains all information about the data and measurement qudits, the dimension of each qudit, and the code depth, i.e. the smallest number of physical qubits that must present errors for there to be a logical error. In addition, `Code` stores the network connections on the primal and dual lattices. This becomes relevant later, because weightings in the decoding procedure are determined based on shortest path length on the dual lattice.
 
-Let's say we want to instantiate a kitaev surface code of code depth 11, and qudit dimension 3. The corresponding subclass of `Code` is `KSC`. 
+Let's say we want to instantiate a kitaev surface code of code depth 11, and qudit dimension 3. The relevant subclass of `Code` is `KSC`. 
 
 ```python
 code = KSC(depth = 11, dimension = 3)
@@ -85,7 +85,20 @@ which produces the following plot:
 
 ![alt text](/visualizations/Kitaev_Surface_Code.png)
 
+Circles are associated with physical qubits inside the lattice, while diamonds are external elements, which are quasi-excitations that are utilized in the decoding process, but don't correspond to anything physical. Black represents data, while blue and red respectively represent measure-X and measure-Z qudits. Edges are connections between data qudits.
 
+If instead, we wanted to view only the dual lattice, we could type:
+
+```python
+code.dual(1, 'Kitaev Surface Code')
+plt.show()
+```
+
+## Error Models
+
+Once we have our code, we need to choose an error model under which to simulate the code's time evolution. In QTop, error models are represented by objects containing the Pauli X, Y and Z error probabilities associated with each gate. All error model objects are instances of the base class `ErrorModel`, or a subclass thereof. Inherent subclasses include `CodeCapacity`, `Phenomenological`, and `CircuitLevel`.
+
+If we want to create our own error model, we just need to specify the gates with non-zero error probabilities as inputs to `ErrorModel`.
 
 
 
