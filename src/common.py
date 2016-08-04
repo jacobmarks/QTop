@@ -31,10 +31,26 @@ class Qubit:
 		
 
 class Stabilizer:
-	def __init__(self, type, data, order):
+	def __init__(self, type, data, order = False):
 		self.data = data
-		self.order = order
 		self.type = type
+		if order == False:
+			self.order = Order(data)
+		else:
+			self.order = order
+
+def generateStabilizerData(measure_position, scale, num_sides, angle = 0):
+	data = []
+	for k in range(num_sides):
+		x = scale * float(cos(2*pi*k/num_sides))
+		y = scale * float(sin(2*pi*k/num_sides))
+		if angle != 0:
+			x_prime = float(cos(angle))*x - float(sin(angle))*y
+			y_prime = float(sin(angle))*x + float(cos(angle))*y
+			x, y = x_prime, y_prime
+		position = (round(x + measure_position[0], 3) ,round(y  + measure_position[1], 3))
+		data.append(position)
+	return data
 
 def Order(data_list):
 	count, order = 0, {}
@@ -66,19 +82,6 @@ class Code:
 		self.generateTypes()
 		self.generateColors()
 		self.generateStabilizerTypes()
-
-	def generateStabilizerData(self, measure_position, scale, num_sides, angle = 0):
-		data = []
-		for k in range(num_sides):
-			x = scale * float(cos(2*pi*k/num_sides))
-			y = scale * float(sin(2*pi*k/num_sides))
-			if angle != 0:
-				x_prime = float(cos(angle))*x - float(sin(angle))*y
-				y_prime = float(sin(angle))*x + float(cos(angle))*y
-				x, y = x_prime, y_prime
-			position = (round(x + measure_position[0], 3) ,round(y  + measure_position[1], 3))
-			data.append(position)
-		return data
 
 	def generatePrimalEdges(self, stabilizer):
 		stabilizer_type = stabilizer.type
@@ -137,11 +140,11 @@ class Code:
 			qubit2 = self.external[type2][0]
  			return nx.shortest_path_length(lattice, qubit1, qubit2) + 2
 
-	def plot(self, charge_type, plot_number, title, lattice = 'primal'):
-		if lattice == 'primal':
-			plot_primal(self, charge_type, plot_number, title)
-		elif lattice == 'dual':
-			plot_dual(self, charge_type, plot_number, title)
-		else:
-			# input is shrunk lattice type
-			plot_shrunk(self, lattice, charge_type, plot_number, title)
+	# def plot(self, plot_number, title, charge_types = ['X','Z'], lattice = 'primal'):
+	# 	if lattice == 'primal':
+	# 		plot_primal(self, plot_number, title, charge_types)
+	# 	elif lattice == 'dual':
+	# 		plot_dual(self, plot_number, title, charge_types)
+	# 	else:
+	# 		# input is shrunk lattice type
+	# 		plot_shrunk(self, lattice, plot_number, title, charge_types)

@@ -15,7 +15,6 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import *
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-
 from common import *
 from geometry import *
 import sys
@@ -40,32 +39,36 @@ class KitaevCode(Code):
 	def generateColors(self):
 		self.colors = {'X':'red', 'Z':'blue','data':'black'}
 
-	def CodeCycle(self, model):
+	def CodeCycle(self, model, p):
 
 		# find length of code cycle:
 		num_sides = 4
 
 
 		# Step 1:
-		self = model.Identity(self)
-		self = model.Initialize(self, 'X')
+		# for data in self.data:
+		# 	print self.data[data]
+		self = model.Identity(self, p)
+		# for data in self.data:
+		# 	print self.data[data]
+		self = model.Initialize(self, 'X', p)
 
 		# # Step 2:
-		self = model.Initialize(self, 'Z')
-		self = model.Fourier(self, 'X')
+		self = model.Initialize(self, 'Z', p)
+		self = model.Fourier(self, 'X', p)
 
 		# # # Steps 3-6:
 		for count in range(num_sides):
 			for type in self.types:
 				charge_type = type
-				self = model.Sum(self, count, type, charge_type)
+				self = model.Sum(self, count, type, charge_type, p)
 
 		# # Step 7:
-		self = model.Fourier(self, 'X')
-		self = model.Measure(self, 'Z')
+		self = model.Fourier(self, 'X', p)
+		self = model.Measure(self, 'Z', p)
 
 		# # Step 8:
-		self = model.Measure(self, 'X')
+		self = model.Measure(self, 'X', p)
 
 		return self
 
@@ -120,7 +123,7 @@ class KSC(PlanarCode, KitaevCode):
 					type, position = measure_qubit['type'], measure_qubit['position']
 					self.syndromes[position] = Qubit(position, charge = Charge(), type = type)
 					num_sides = self.types[type]['num_sides']
-					data = self.generateStabilizerData(position, 1, num_sides, 0)
+					data = generateStabilizerData(position, 1, num_sides, 0)
 					# print data
 					if i == 0 or i == depth:
 						if i == 0:
@@ -187,7 +190,7 @@ class KTC(ToricCode, KitaevCode):
 				for type in pos_types:
 					planar_measure_position = pos_types[type]
 					measure_qubit = Qubit(planar_measure_position, Charge(), type)
-					stabilizer_data = self.generateStabilizerData(planar_measure_position, 1, 4, 0)
+					stabilizer_data = generateStabilizerData(planar_measure_position, 1, 4, 0)
 					order = Order(stabilizer_data)
 					toric_measure_position = ToricCoordinates(planar_measure_position, length)
 					self.stabilizers[type][toric_measure_position] = Stabilizer(type,stabilizer_data, order)

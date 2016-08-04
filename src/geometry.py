@@ -59,30 +59,31 @@ class PlanarCode(Code):
 			return False
 
 
-	def plot_primal(self, charge_type, plot_number, title):
+	def plot_primal(self, plot_number, title, charge_types = ['X','Z']):
 		Primal = plt.figure(plot_number)
 		d = self.dimension
 
-		for type in self.types:
-			for measure_position in self.stabilizers[type]:
-				measure_qubit = self.syndromes[measure_position]
-				charge = measure_qubit.charge[charge_type]
+		for charge_type in charge_types:
+			for type in self.types:
+				for measure_position in self.stabilizers[type]:
+					measure_qubit = self.syndromes[measure_position]
+					charge = measure_qubit.charge[charge_type]
+					if charge != 0:
+						plt.scatter(*measure_position,marker="*", color = self.colors[type], s=200*float(charge)/(d-1))
+					else:
+						plt.scatter(*measure_position, color = self.colors[type])
+
+
+			for type in self.types:
+				for ext in self.external[type]:
+					plt.scatter(*ext, marker="D", color = self.colors[type])
+
+			for position in self.primal.nodes():
+				charge = self.data[position].charge[charge_type]
 				if charge != 0:
-					plt.scatter(*measure_position,marker="*", color = self.colors[type], s=200*float(charge)/(d-1))
+					plt.scatter(*position,marker="*", color= self.colors['data'], s=200*float(charge)/(d-1))
 				else:
-					plt.scatter(*measure_position, color = self.colors[type])
-
-
-		for type in self.types:
-			for ext in self.external[type]:
-				plt.scatter(*ext, marker="D", color = self.colors[type])
-
-		for position in self.primal.nodes():
-			charge = self.data[position].charge[charge_type]
-			if charge != 0:
-				plt.scatter(*position,marker="*", color= self.colors['data'], s=200*float(charge)/(d-1))
-			else:
-				plt.scatter(*position, color = self.colors['data'])
+					plt.scatter(*position, color = self.colors['data'])
 
 
 		for edge in self.primal.edges():
@@ -91,17 +92,19 @@ class PlanarCode(Code):
 		plt.title(str(title))
 		return plt.figure(plot_number)
 
-	def plot_dual(self, charge_type, plot_number, title):
+	def plot_dual(self, plot_number, charge_typ, titlees = ['X','Z']):
 		Dual = plt.figure(plot_number)
 		d = self.dimension
 
-		for type in self.types:
-			for measure_position in self.stabilizers[type]:
-				measure_qubit = self.syndromes[measure_position]
+		for charge_type in charge_types:
 
-				charge = measure_qubit.charge[charge_type]
-				if charge != 0:
-					plt.scatter(*measure_position,marker="*", color = self.colors[type], s=200*float(charge)/(d-1))
+			for type in self.types:
+				for measure_position in self.stabilizers[type]:
+					measure_qubit = self.syndromes[measure_position]
+
+					charge = measure_qubit.charge[charge_type]
+					if charge != 0:
+						plt.scatter(*measure_position,marker="*", color = self.colors[type], s=200*float(charge)/(d-1))
 
 		for type in self.types:
 			for ext in self.external[type]:
@@ -116,7 +119,7 @@ class PlanarCode(Code):
 		plt.title(str(title))
 		return plt.figure(plot_number)
 
-	def plot_shrunk(self, shrunk_type, charge_type, plot_number, title):
+	def plot_shrunk(self, shrunk_type, plot_number, title, charge_types):
 		Dual = plt.figure(plot_number)
 		d = self.dimension
 
@@ -127,9 +130,10 @@ class PlanarCode(Code):
 				continue
 			for measure_position in self.stabilizers[type]:
 				measure_qubit = self.syndromes[measure_position]
-				charge = measure_qubit.charge[charge_type]
-				if charge != 0:
-					plt.scatter(*measure_position,marker="*", color = self.colors[type], s=200*float(charge)/(d-1))
+				for charge_type in charge_types:
+					charge = measure_qubit.charge[charge_type]
+					if charge != 0:
+						plt.scatter(*measure_position,marker="*", color = self.colors[type], s=200*float(charge)/(d-1))
 
 			if type != shrunk_type and self.code == 'color':
 				for ext in self.external[type]:

@@ -12,7 +12,6 @@
  
 from random import random, randint
 from math import *
-
 from common import *
 
 # Triple [X,Y,Z] of Pauli Error Rates for each gate
@@ -24,12 +23,10 @@ def pauli_X(qubit, dim):
 	return qubit
 
 def pauli_Z(qubit, dim):
-	# print 'Z', data.position
 	qubit.charge['Z'] = (qubit.charge['Z'] + randint(1,dim - 1))%dim
 	return qubit 
 
 def pauli_Y(qubit, dim):
-	# print 'Y', data.position
 	qubit.charge['X'] = (qubit.charge['X'] + randint(1,dim - 1))%dim
 	qubit.charge['Z'] = (qubit.charge['Z'] + randint(1,dim - 1))%dim
 	return qubit
@@ -49,48 +46,56 @@ def BP_Channel(qubit, dim, error_rates):
 			qubit = pauli_Z(qubit, dim)
 	return qubit
 
+# Function handle: for perfect gates, also performs gate with 0 errors
+PerfectGate = lambda p: [0,0,0]
+
+# For imperfect Gates
+def error_probs(n):
+	return lambda p: [float(p)/n, float(p)/n, float(p)/n]
+
 class ErrorModel:
 
 	def __init__(self, **kwargs):
-		prop_defaults = {'initialize': [0,0,0],
-		'identity': [0,0,0],
-		'fourier': [0,0,0],
-		'measure': [0,0,0],
-		'sum': {'target':[0,0,0], 'control': [0,0,0]},
-		}
+
+		prop_defaults = {}
+
+		for gate in ['initialize','identity','fourier','measure']:
+			prop_defaults[gate] = PerfectGate
+		prop_defaults['sum'] = {'target':PerfectGate, 'control':PerfectGate}
+
 		
 		for (prop, default) in prop_defaults.iteritems():
 			setattr(self, prop, kwargs.get(prop, default))
 
-	def Initialize(self, code, type):
+	def Initialize(self, code, type, p):
 		dimension = code.dimension
 		for measure_position in code.stabilizers[type]:
 			measure_qubit = code.syndromes[measure_position]
-			code.syndromes[measure_position] = BP_Channel(measure_qubit, dimension, self.initialize)
+			code.syndromes[measure_position] = BP_Channel(measure_qubit, dimension, self.initialize(p))
 		return code
 
-	def Identity(self, code):
+	def Identity(self, code, p):
 		dimension = code.dimension
 		for data_position in code.data:
 			data_qubit = code.data[data_position]
-			code.data[data_position] = BP_Channel(data_qubit, dimension, self.identity)
+			code.data[data_position] = BP_Channel(data_qubit, dimension, self.identity(p))
 		return code
 
-	def Fourier(self, code, type):
+	def Fourier(self, code, type, p):
 		dimension = code.dimension
 		for measure_position in code.stabilizers[type]:
 			measure_qubit = code.syndromes[measure_position]
-			code.syndromes[measure_position] = BP_Channel(measure_qubit, dimension, self.fourier)
+			code.syndromes[measure_position] = BP_Channel(measure_qubit, dimension, self.fourier(p))
 		return code
 
-	def Measure(self, code, type):
+	def Measure(self, code, type, p):
 		dimension = code.dimension
 		for measure_position in code.stabilizers[type]:
 			measure_qubit = code.syndromes[measure_position]
-			code.syndromes[measure_position] = BP_Channel(measure_qubit, dimension, self.measure)
+			code.syndromes[measure_position] = BP_Channel(measure_qubit, dimension, self.measure(p))
 		return code
 
-	def Sum(self, code, count, type, charge_type):
+	def Sum(self, code, count, type, charge_type, p):
 		if count %2 == 0:
 			sign = 1 # Add control to target
 		else:
@@ -108,30 +113,31 @@ class ErrorModel:
 				target_charge = target_qubit.charge[charge_type]
 
 				code.syndromes[target_position].charge[charge_type] = (target_charge + sign * control_charge)%dimension
-				code.data[control_position] = BP_Channel(control_qubit, dimension, self.sum['control'])
-			code.syndromes[target_position] = BP_Channel(target_qubit, dimension, self.sum['target'])
+				code.data[control_position] = BP_Channel(control_qubit, dimension, self.sum['control'](p))
+			code.syndromes[target_position] = BP_Channel(target_qubit, dimension, self.sum['target'](p))
 		return code
 
 
 class CodeCapacity(ErrorModel):
-	def __init__(self, data_error_rate):
+	def __init__(self):
 		ErrorModel.__init__(self)
-		p = float(data_error_rate)
-		self.identity = [p/3,p/3,p/3]
+		self.identity = error_probs(3)
 
 class Phenomenological(ErrorModel):
-	def __init__(self, physical_error_rate):
+	def __init__(self):
 		ErrorModel.__init__(self)
-		p = float(physical_error_rate)
-		self.identity = [p/3,p/3,p/3]
-		self.measure = [p, p, p]
+		self.identity = error_probs(3)
+		self.measure = error_probs(1)
 
 class CircuitLevel(ErrorModel):
-	def __init__(self, error_rate):
+	def __init__(self):
 		ErrorModel.__init__(self)
-		p = float(error_rate)
-		self.initialize = [p/3,p/3,p/3]
-		self.identity = [p/3,p/3,p/3]
-		self.fourier = [p/3,p/3,p/3]
-		self.measure = [p, p, p]
-		self.sum = {'target':[p/4,p/4,p/4], 'control': [p/4,p/4,p/4]}
+		self.initialize = error_probs(3)
+		self.identity = error_probs(3)
+		self.fourier = error_probs(3)
+		self.measure = error_probs(1)
+		self.sum = {'target':error_probs(4), 'control': error_probs(4)}
+
+
+
+
