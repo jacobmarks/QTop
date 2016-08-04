@@ -22,12 +22,31 @@ it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-Quantum++ is distributed in the hope that it will be useful,
+QTop is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Quantum++.  If not, see <http://www.gnu.org/licenses/>.
+along with QTop.  If not, see <http://www.gnu.org/licenses/>.
 
 ---
+
+# Brief Tutorial
+
+## Basics
+QTop's base classes, including `Qubit`, `Stabilizer`, and `Code`, are all included in the 'common' module. In this first installment of the tutorial, you will be introduced to these classes and their methods. By the end, you will be able to create instances of topological quantum error correcting codes.
+
+The simplest object one can work with in QTop is a qubit. A qubit is defined by its position, charge and type. By default, a qubit has trivial X and Z charges, and is of the type `'data'`. To instantiate a measurement qubit with X charge 1 and Z charge 0 at position (5,2), type the command
+
+```python
+qubit = Qubit((5,2), charge = {'X':1, 'Z':0}, type = 'measure')
+```
+
+
+
+
+
+
+---
+
