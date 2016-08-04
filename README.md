@@ -140,23 +140,23 @@ s = syndrome(code)
 
 At this point, we have a code with errors given by the action of our error model. We want to return the code to its codespace by correcting for those errors in an efficient and effective way. To do this, we need to apply homologically trivial correction chains. This error correction is purely classical, and comes in two components:
 
-1. Clustering Algorithm
+1. Matching Algorithm
 2. Recovery Procedure
 
-The clustering algorithm splits the syndrome into smaller, localized groups of measurement qudits. For qubits, this clustering can be performed using Edmunds' Blossom algorithm for min weight perfect matching, in which case each cluster consists of 2 qubits. Alternatively, renormalization group clustering works for all qudit dimensions by iteratively increasing the distance scale, and identifying all neutral clusters at a given scale.
+The matching algorithm splits the syndrome into localized pairs of measurement qudits. One such algorithm is Edmunds' Blossom algorithm for min weight perfect matching. Alternatively, renormalization group clustering identifies all neutral clusters at a given distance scale, and then pairs off elements of the same charge within these clusters.
 
-Because we have chosen a code with dimension 3, we will use a hard decision renormalization group (HDRG) clustering:
+For the purpose of demonstration, we will use a hard decision renormalization group (HDRG) matching:
 
 ```python
-clustering = HDRG_cluster()
+matching = HDRG_matching()
 ```
 
 Recovery is the process through which the code is returned to its codespace. In the case of surface codes, `surface_recovery()` involves syndrome transportation, fusion and annihilation. For color codes, the recovery procedure identifies closed loops of a given charge on the dual lattice. `fill_recovery` recovers the charge of each data qubit within the loop. 
 
-We can create a surface code `decoder` object from our clustering:
+We can create a surface code `decoder` object from our matching:
 
 ```python
-decoder = surface_decoder(clustering)
+decoder = surface_decoder(matching)
 ```
 
 Then we perform error correction by applying this decoder:
@@ -173,7 +173,7 @@ print = Assessment(code)
 
 ## Putting it all Together
 
-In this brief tutorial, we've introduced the fundamentals of codes, error models, and decoders. These are the three basic ingredients of a `simulation`. `sim = simulation(code, model, decoder)` instantiates a simulation object. Given a simulation, a code depth, and a physical error rate, we succeed if we decode our code without any logical errors. Otherwise, we fail.
+In this brief tutorial, we've introduced the fundamentals of codes, error models, and decoders. These are the three basic ingredients of a `simulation`. Then, `sim = simulation(code, model, decoder)` instantiates a simulation object. Given a simulation, a code depth, and a physical error rate, we succeed if we decode our code without any logical errors. Otherwise, we fail.
 
 We can `run` this simulation by specifying a range of probabilities and code depths, and the number of trials to conduct for each depth-probability combination.
 
