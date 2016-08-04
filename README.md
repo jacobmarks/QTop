@@ -35,24 +35,24 @@ along with QTop.  If not, see <http://www.gnu.org/licenses/>.
 # Brief Tutorial
 
 ## Basics
-QTop's base classes, including `Qubit`, `Stabilizer`, and `Code`, are all included in the 'common' module. In this first installment of the tutorial, you will be introduced to these classes and their methods. By the end, you will be able to create instances of topological quantum error correcting codes.
+QTop's base classes, including `qudit`, `Stabilizer`, and `Code`, are all included in the 'common' module. In this first installment of the tutorial, you will be introduced to these classes and their methods. By the end, you will be able to create instances of topological quantum error correcting codes.
 
-The simplest object one can work with in QTop is a qubit. A qubit is defined by its position, charge and type. By default, a qubit has trivial X and Z charges, and is of the type `'data'`. To instantiate a measure-X qubit with X charge 1 and Z charge 0 at position (5,2), type the command
+The simplest object one can work with in QTop is a qudit. A qudit is defined by its position, charge and type. By default, a qudit has trivial X and Z charges, and is of the type `'data'`. To instantiate a measure-X qudit with X charge 1 and Z charge 0 at position (5,2), type the command
 
 ```python
 position = (5,2)
-qubit = Qubit(position, charge = {'X':1, 'Z':0}, type = 'X')
+qudit = qudit(position, charge = {'X':1, 'Z':0}, type = 'X')
 ```
 
-A stabilizer is stored in the code by the position of its central measurement qubit, and contains information about the positions of the surrounding data qubits, as well as the order in which they must be measured during the error correction code cycle. In addition, the stabilizer has measurement type of the central qubit. 
+A stabilizer is stored in the code by the position of its central measurement qudit, and contains information about the positions of the surrounding data qudits, as well as the order in which they must be measured during the error correction code cycle. In addition, the stabilizer has measurement type of the central qudit. 
 
-As a simple example, let's say we want to create a stabilizer with 6 equally spaced data qubits, and central qubit as given above. To do this, we first generate the surrounding data qubits:
+As a simple example, let's say we want to create a stabilizer with 6 equally spaced data qudits, and central qudit as given above. To do this, we first generate the surrounding data qudits:
 
 ```python
 data = generateStabilizerData(position, scale = 1, num_sides = 6, angle = 0)
 ```
 
-This generates the following array, giving the positions of the data qubits:
+This generates the following array, giving the positions of the data qudits:
 
 ```python
 [(6.0, 2.0), (5.5, 2.866), (4.5, 2.866), (4.0, 2.0), (4.5, 1.134), (5.5, 1.134)]
@@ -64,7 +64,24 @@ Creating a stabilizer with this data is as simple as:
 stabilizer = Stabilizer('X', data, order = False)
 ```
 
-By default, the measurement order is counterclockwise. However, one can program more exotic code cycle orderings.
+By default, the measurement order is counterclockwise, but one can program more complex code cycle orderings.
+
+In QTop, `Code` is the base class for topological error correcting codes. From this, surface and color codes are derived as subclasses. In addition, this base class can easily be extended to 3D color codes, gauge color codes, and more exotic topological codes. `Code` contains all information about the data and measurement qudits, the dimension of each qudit, and the code depth, i.e. the smallest number of physical qubits that must present errors for there to be a logical error. In addition, `Code` stores the network connections on the primal and dual lattices. This becomes relevant later, because weightings in the decoding procedure are determined based on shortest path length on the dual lattice.
+
+Let's say we want to instantiate a kitaev surface code of code depth 11, and qudit dimension 3. The corresponding subclass of `Code` is `KSC`. 
+
+```python
+code = KSC(depth = 11, dimension = 3)
+```
+
+We can view this code with the plotting methods
+
+```python
+code.plot_primal(1, 'Kitaev Surface Code')
+plt.show()
+```
+
+which produces the following plot:
 
 
 
