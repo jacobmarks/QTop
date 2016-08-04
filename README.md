@@ -37,11 +37,39 @@ along with QTop.  If not, see <http://www.gnu.org/licenses/>.
 ## Basics
 QTop's base classes, including `Qubit`, `Stabilizer`, and `Code`, are all included in the 'common' module. In this first installment of the tutorial, you will be introduced to these classes and their methods. By the end, you will be able to create instances of topological quantum error correcting codes.
 
-The simplest object one can work with in QTop is a qubit. A qubit is defined by its position, charge and type. By default, a qubit has trivial X and Z charges, and is of the type `'data'`. To instantiate a measurement qubit with X charge 1 and Z charge 0 at position (5,2), type the command
+The simplest object one can work with in QTop is a qubit. A qubit is defined by its position, charge and type. By default, a qubit has trivial X and Z charges, and is of the type `'data'`. To instantiate a measure-X qubit with X charge 1 and Z charge 0 at position (5,2), type the command
 
 ```python
-qubit = Qubit((5,2), charge = {'X':1, 'Z':0}, type = 'measure')
+position = (5,2)
+qubit = Qubit(position, charge = {'X':1, 'Z':0}, type = 'X')
 ```
+
+A stabilizer is stored in the code by the position of its central measurement qubit, and contains information about the positions of the surrounding data qubits, as well as the order in which they must be measured during the error correction code cycle. In addition, the stabilizer has measurement type of the central qubit. 
+
+As a simple example, let's say we want to create a stabilizer with 6 equally spaced data qubits, and central qubit as given above. To do this, we first generate the surrounding data qubits:
+
+```python
+data = generateStabilizerData(position, scale = 1, num_sides = 6, angle = 0)
+```
+
+This generates the following array, giving the positions of the data qubits:
+
+```python
+[(6.0, 2.0), (5.5, 2.866), (4.5, 2.866), (4.0, 2.0), (4.5, 1.134), (5.5, 1.134)]
+```
+
+Creating a stabilizer with this data is as simple as:
+
+```python
+stabilizer = Stabilizer('X', data, order = False)
+```
+
+By default, the measurement order is counterclockwise. However, one can program more exotic code cycle orderings.
+
+
+
+
+
 
 
 
