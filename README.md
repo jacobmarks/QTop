@@ -41,7 +41,7 @@ The simplest object one can work with in QTop is a qudit. A qudit is defined by 
 
 ```python
 position = (5,2)
-qudit = qudit(position, charge = {'X':1, 'Z':0}, type = 'X')
+qudit = Qudit(position, charge = {'X':1, 'Z':0}, type = 'X')
 ```
 
 A stabilizer is stored in the code by the position of its central measurement qudit, and contains information about the positions of the surrounding data qudits, as well as the order in which they must be measured during the error correction code cycle. In addition, the stabilizer has measurement type of the central qudit. 
@@ -98,7 +98,20 @@ plt.show()
 
 Once we have our code, we need to choose an error model under which to simulate the code's time evolution. In QTop, error models are represented by objects containing the Pauli X, Y and Z error probabilities associated with each gate. All error model objects are instances of the base class `ErrorModel`, or a subclass thereof. Inherent subclasses include `CodeCapacity`, `Phenomenological`, and `CircuitLevel`.
 
-If we want to create our own error model, we just need to specify the gates with non-zero error probabilities as inputs to `ErrorModel`.
+If we want to create our own error model, we just need to specify the gates with non-zero error probabilities as inputs to `ErrorModel`. Suppose we want to create an error model with faulty initialization, which presents a Pauli X error with probability p, and Pauli Z error with probability p/2 for some p. First, we choose our p. For simplicity, we will set `p = 0.5`.
+
+Then we instantiate our model:
+
+```python
+model = ErrorModel(initialize = [p, 0, p/2])
+```
+
+We can simulate our code under this error model with the `CodeCycle` method:
+
+```python
+code = code.CodeCycle(model)
+```
+
 
 
 
