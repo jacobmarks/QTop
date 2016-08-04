@@ -98,7 +98,7 @@ plt.show()
 
 Once we have our code, we need to choose an error model under which to simulate the code's time evolution. In QTop, error models are represented by objects containing the Pauli X, Y and Z error probabilities associated with each gate. All error model objects are instances of the base class `ErrorModel`, or a subclass thereof. Inherent subclasses include `CodeCapacity`, `Phenomenological`, and `CircuitLevel`.
 
-If we want to create our own error model, we just need to specify the gates with non-zero error probabilities as inputs to `ErrorModel`. Suppose we want to create an error model with faulty initialization, which presents a Pauli X error with probability p, and Pauli Z error with probability p/2 for some p. First, we choose our p. For simplicity, we will set `p = 0.5`.
+If we want to create our own error model, we just need to specify the gates with non-zero error probabilities as inputs to `ErrorModel`. Suppose we want to create an error model with faulty initialization, which presents a Pauli X error with probability p, and Pauli Z error with probability p/2 for some p. First, we choose our p. For simplicity, we will set `p = 0.1`.
 
 Then we instantiate our model:
 
@@ -111,6 +111,12 @@ We can simulate our code under this error model with the `CodeCycle` method:
 ```python
 code = code.CodeCycle(model)
 ```
+
+after this, errors in our code, i.e. non-trivial eigenvalue measurements, are indicated by stars. The size of the star scales with the magnitude of the error.
+
+![alt text](/visualizations/KSC_with_errors.png)
+
+
 
 
 
