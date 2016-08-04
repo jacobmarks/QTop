@@ -1,5 +1,5 @@
 # QTop
-## Version 0.1 - 22 July 2016
+## Version 0.1 - 04 August 2016
 
 QTop is an open-source python module for simulation and visualization of 
 topological quantum codes. QTop is object-oriented and easy to read,
@@ -157,6 +157,21 @@ Finally, we can assess our decoding by checking to see if any logical errors hav
 print = Assessment(code)
 ```
 
+## Putting it all Together
+
+In this brief tutorial, we've introduced the fundamentals of codes, error models, and decoders. These are the three basic ingredients of a `simulation`. `sim = simulation(code, model, decoder)` instantiates a simulation object. Given a simulation, a code depth, and a physical error rate, we succeed if we decode our code without any logical errors. Otherwise, we fail.
+
+We can `run` this simulation by specifying a range of probabilities and code depths, and the number of trials to conduct for each depth-probability combination.
+
+```python
+import numpy as np
+depths = np.linspace(5,55,6)
+probabilities = np.logspace(-3,-0.5,10)
+trials = 1000
+run(simulation, depths, probabilities, trials)
+```
+
+This will return a logical error rate for each depth-probability combination. Together, this logical error rates will give you an estimate of the code's threshold.
 ---
 
 
