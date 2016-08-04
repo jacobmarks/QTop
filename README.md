@@ -83,6 +83,8 @@ plt.show()
 
 which produces the following plot:
 
+![alt text](QTop/visualizations/Kitaev_Surface_Code.png "Surface Code")
+
 
 
 
