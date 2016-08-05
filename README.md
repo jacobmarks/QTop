@@ -140,10 +140,11 @@ s = syndrome(code)
 
 At this point, we have a code with errors given by the action of our error model. We want to return the code to its codespace by correcting for those errors in an efficient and effective way. To do this, we need to apply homologically trivial correction chains. This error correction is purely classical, and comes in two components:
 
-1. Matching Algorithm
-2. Recovery Procedure
+1. Syndrome Generation
+2. Matching Algorithm
+3. Recovery Procedure
 
-The matching algorithm splits the syndrome into localized pairs of measurement qudits. One such algorithm is Edmunds' Blossom algorithm for min weight perfect matching. Alternatively, renormalization group clustering identifies all neutral clusters at a given distance scale, and then pairs off elements of the same charge within these clusters.
+Syndrome generation entails extracting information about check-operator measurement results from the code. The matching algorithm splits the syndrome into localized pairs of measurement qudits. One such algorithm is Edmunds' Blossom algorithm for min weight perfect matching. Alternatively, renormalization group clustering identifies all neutral clusters at a given distance scale, and then pairs off elements of the same charge within these clusters.
 
 For the purpose of demonstration, we will use a hard decision renormalization group (HDRG) matching:
 
@@ -162,7 +163,7 @@ decoder = surface_decoder(matching)
 Then we perform error correction by applying this decoder:
 
 ```python
-code = decoder(code, syndrome)
+code = decoder(code)
 ```
 
 Finally, we can assess our decoding by checking to see if any logical errors have occurred. 
