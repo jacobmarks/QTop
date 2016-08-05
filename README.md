@@ -173,7 +173,7 @@ print = Assessment(code)
 
 ## Putting it all Together
 
-In this brief tutorial, we've introduced the fundamentals of codes, error models, and decoders. These are the three basic ingredients of a `simulation`. Then, `sim = simulation(code, model, decoder)` instantiates a simulation object. Given a simulation, a code depth, and a physical error rate, we succeed if we decode our code without any logical errors. Otherwise, we fail.
+In this brief tutorial, we've introduced the fundamentals of codes, error models, and decoders. These are the three basic ingredients of a `simulation`. Then, `sim = simulation('kitaev', 'toric', 2, model, decoder)` instantiates a simulation object. The first three input arguments are used to construct the code itself. Given a simulation, a code depth, and a physical error rate, we succeed if we decode our code without any logical errors. Otherwise, we fail.
 
 We can `run` this simulation by specifying a range of probabilities and code depths, and the number of trials to conduct for each depth-probability combination.
 
