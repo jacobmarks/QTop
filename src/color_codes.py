@@ -53,20 +53,20 @@ class ColorCode(Code):
 			self.shrunk[type] = nx.Graph()
 
 		for type1 in self.stabilizers:
-			for pos1 in self.stabilizers[type1]:
-				stabilizer1 = self.stabilizers[type1][pos1]
-				center1 = stabilizer1.center
+			for measure1_position in self.stabilizers[type1]:
+				stabilizer1 = self.stabilizers[type1][measure1_position]
+				measure1_qubit = self.syndromes[measure1_position]
 
 				for count in stabilizer1.order:
 					data = stabilizer1.order[count]
 					for type2 in self.memberships[data]:
 						if type2 != type1:
-							for pos2 in self.memberships[data][type2]:
-								stabilizer2 = self.stabilizers[type2][pos2]
-								center2 = stabilizer2.center
+							for measure2_position in self.memberships[data][type2]:
+								stabilizer2 = self.stabilizers[type2][measure2_position]
+								measure2_qubit = self.syndromes[measure2_position]
 								edge_type = self.complementaryType([type1, type2])
-								self.shrunk[edge_type].add_edge(*(center1, center2), type = edge_type)
-								self.dual.add_edge(*(center1, center2), type = edge_type)
+								self.shrunk[edge_type].add_edge(*(measure1_position, measure2_position), type = edge_type)
+								self.dual.add_edge(*(measure1_position, measure2_position), type = edge_type)
 
 
 	######## Code Cycles #######
@@ -76,7 +76,7 @@ class ColorCode(Code):
 	# including interleaved cycles
 
 
-	def OneQubitCodeCycle(self, model):
+	def OneQubitCodeCycle(self, model, p):
 
 		# length of code cycle is 2*(max number of sides + 2)
 		# 'X' and 'Z' checks each require one step for initialization,
@@ -91,18 +91,18 @@ class ColorCode(Code):
 
 			# Initialization
 			for type in self.stabilizers:
-				self = model.Initialize(self, type)
+				self = model.Initialize(self, type, p)
 			for type in self.stabilizers:
-				self = model.Identity(self)
+				self = model.Identity(self, p)
 
 			# Stabilizer Check Operations
 			for order in range(max_num_sides):
 				for type in self.types:
-					self = model.Sum(self, order, type, charge_type)
+					self = model.Sum(self, order, type, charge_type, p)
 
 			# Measurement
 			for type in self.types:
-				self = model.Measure(self, type)
+				self = model.Measure(self, type, p)
 
 		return self
 
@@ -133,7 +133,7 @@ class Triangular_4_8_8(PlanarCode, Color_4_8_8):
 	def generateStabilizers(self):
 		for type in self.types:
 			self.external[type] = {}
-			self.boundary_measures[type] = {}
+			self.boundary_syndromes[type] = {}
 			self.boundary_data[type] = []
 
 		depth = self.depth
@@ -148,8 +148,9 @@ class Triangular_4_8_8(PlanarCode, Color_4_8_8):
 				plaquettes.append({'type':'blue','angle':float(pi)/8,'position':(round(green_position[0] + x_dist, 3), round(green_position[1], 3))})
 				plaquettes.append({'type':'red','angle':0,'position':( round(green_position[0] - float(x_dist)/2, 3), round(green_position[1] + float(x_dist)/2, 3))})
 				plaquettes.append({'type':'red','angle':0,'position':(round(green_position[0] + float(x_dist)/2, 3), round(green_position[1] + float(x_dist)/2, 3))})
-				for face in plaquettes:
-					type, angle, position = face['type'], face['angle'], face['position']
+				for measure_qubit in plaquettes:
+					type, angle, position = measure_qubit['type'], measure_qubit['angle'], measure_qubit['position']
+					self.syndromes[position] = Qubit(position, charge = Charge(), type = type)
 					num_sides, scale = self.types[type]['num_sides'], self.types[type]['scale']
 					
 					if i == 0:
@@ -190,8 +191,8 @@ class Triangular_4_8_8(PlanarCode, Color_4_8_8):
 							continue
 					
 
-					center = Qubit(position, Charge(), type)
-					data = self.generateStabilizerData(center, scale, num_sides, angle)
+					measure = Qubit(position, Charge(), type)
+					data = self.generateStabilizerData(position, scale, num_sides, angle)
 
 
 					if (j == 1 and type in ['blue', 'green']) or (i == 0 and type == 'blue') or (type == 'green' and i == N - j):
@@ -208,11 +209,11 @@ class Triangular_4_8_8(PlanarCode, Color_4_8_8):
 								order[count] = data[count]
 
 						if i == 0 and type == 'blue':
-							self.boundary_measures['blue'][position] = []
-							self.boundary_measures['blue'][position].append(( round(position[0] - float(x_dist)/2, 3), round(position[1], 3)))
-							self.boundary_measures['blue'][position].append(( round(position[0], 3), round(position[1] + float(x_dist)/2, 3)))
+							self.boundary_syndromes['blue'][position] = []
+							self.boundary_syndromes['blue'][position].append(( round(position[0] - float(x_dist)/2, 3), round(position[1], 3)))
+							self.boundary_syndromes['blue'][position].append(( round(position[0], 3), round(position[1] + float(x_dist)/2, 3)))
 							red_position = ( round(position[0] - float(x_dist)/4, 3), round(position[1] - float(x_dist)/4, 3))
-							self.boundary_measures['red'][position] = red_position
+							self.boundary_syndromes['red'][position] = red_position
 							self.boundary_data['green'].append((round(red_position[0], 3), round(red_position[1] + float(1)/sqrt(2)), 3))
 							if j != 0:
 								self.boundary_data['green'].append((round(red_position[0] - float(1)/sqrt(2), 3), round(red_position[1]), 3))
@@ -224,11 +225,11 @@ class Triangular_4_8_8(PlanarCode, Color_4_8_8):
 								order[count] = data[count]
 
 						if type == 'green' and i == N - j:
-							self.boundary_measures['green'][position] = []
-							self.boundary_measures['green'][position].append(( round(position[0] + float(x_dist)/2, 3), round(position[1], 3)))
-							self.boundary_measures['green'][position].append(( round(position[0], 3), round(position[1] + float(x_dist)/2, 3)))
+							self.boundary_syndromes['green'][position] = []
+							self.boundary_syndromes['green'][position].append(( round(position[0] + float(x_dist)/2, 3), round(position[1], 3)))
+							self.boundary_syndromes['green'][position].append(( round(position[0], 3), round(position[1] + float(x_dist)/2, 3)))
 							red_position = ( round(position[0] + float(x_dist)/4, 3), round(position[1] - float(x_dist)/4, 3))
-							self.boundary_measures['red'][position] = red_position
+							self.boundary_syndromes['red'][position] = red_position
 							self.boundary_data['blue'].append((round(red_position[0], 3), round(red_position[1] + float(1)/sqrt(2), 3)))
 							if j != 0:
 								self.boundary_data['blue'].append((round(red_position[0] + float(1)/sqrt(2), 3), round(red_position[1], 3)))
@@ -244,7 +245,7 @@ class Triangular_4_8_8(PlanarCode, Color_4_8_8):
 				
 					else:
 						order = Order(data)
-					self.stabilizers[type][position] = Stabilizer(center, data, order)
+					self.stabilizers[type][position] = Stabilizer(type, data, order)
 						
 						
 
@@ -276,13 +277,13 @@ class Toric_4_8_8(ToricCode, Color_4_8_8):
 				for face in plaquettes:
 					type, angle, position = face['type'], face['angle'], face['position']
 					num_sides, scale = self.types[type]['num_sides'], self.types[type]['scale']
-					center = Qubit(position, Charge(), self.colors[type])
-					stabilizer_data = self.generateStabilizerData(center, scale, num_sides, angle)
+					measure = Qubit(position, Charge(), self.colors[type])
+					stabilizer_data = self.generateStabilizerData(position, scale, num_sides, angle)
 					order = Order(stabilizer_data)
-					toric_center = PlanarToToric(center, length)
-					self.stabilizers[type][toric_center.position] = Stabilizer(toric_center,stabilizer_data, order)
-					self.stabilizers[type][toric_center.position].planar_coords = position
-
+					toric_position = ToricCoordinates(position, length)
+					self.stabilizers[type][toric_position] = Stabilizer(type,stabilizer_data, order)
+					self.stabilizers[type][toric_position].planar_coords = position
+					self.syndromes[toric_position] = Qubit(toric_position, charge = Charge(), type = type)
 
 
 class Color_6_6_6(ColorCode):
@@ -303,7 +304,7 @@ class Triangular_6_6_6(PlanarCode, Color_6_6_6):
 	def generateStabilizers(self):
 		for type in self.types:
 			self.external[type] = {}
-			self.boundary_measures[type] = {}
+			self.boundary_syndromes[type] = {}
 			self.boundary_data[type] = []
 
 		depth = self.depth
@@ -314,9 +315,10 @@ class Triangular_6_6_6(PlanarCode, Color_6_6_6):
 				green_position = (round(3 * (i + float(j)/2), 3), round(float(3* sqrt(3) * j)/2, 3))
 				plaquettes.append({'type':'green','angle':0,'position':green_position})
 				plaquettes.append({'type':'blue','angle':0,'position':(round(green_position[0] + float(3)/2, 3), round(green_position[1] + float(sqrt(3))/2, 3))})
-				plaquettes.append({'type':'red','angle':0,'position':(round(green_position[0], 3), round(green_position[1] + sqrt(3), 3))})
+				plaquettes.append({'type':'red','angle':0,'position':(round(green_position[0], 3), round(float(green_position[1] + sqrt(3)), 3))})
 				for face in plaquettes:
 					type, angle, position = face['type'], face['angle'], face['position']
+					self.syndromes[position] = Qubit(position, charge = Charge(), type = type)
 					num_sides, scale = self.types[type]['num_sides'], self.types[type]['scale']
 					
 					if j == 0:
@@ -348,8 +350,8 @@ class Triangular_6_6_6(PlanarCode, Color_6_6_6):
 							self.external['green'][position] = {'blue':blue_partners, 'red':red_partners}
 							continue
 
-					center = Qubit(position, Charge(), type)
-					data = self.generateStabilizerData(center, scale, num_sides, angle)
+					measure = Qubit(position, Charge(), type)
+					data = self.generateStabilizerData(position, scale, num_sides, angle)
 					
 
 					if (j == 1 and type == 'green') or (i == 0 and type == 'blue') or (i == N - j and type == 'red'):
@@ -369,7 +371,7 @@ class Triangular_6_6_6(PlanarCode, Color_6_6_6):
 					else:
 						order = Order(data)
 					
-					self.stabilizers[type][position] = Stabilizer(center, data, order)
+					self.stabilizers[type][position] = Stabilizer(type, data, order)
 		
 
 
@@ -397,108 +399,12 @@ class Toric_6_6_6(ToricCode, Color_6_6_6):
 				for face in plaquettes:
 					type, angle, position = face['type'], face['angle'], face['position']
 					num_sides, scale = self.types[type]['num_sides'], self.types[type]['scale']
-
-
-					
-					center = Qubit(position, Charge(), self.colors[type])
-					data = self.generateStabilizerData(center, scale, num_sides, angle)
-					toric_center = PlanarToToric(center, length1, length2)
-					order = Order(data)
-					self.stabilizers[type][toric_center.position] = Stabilizer(toric_center,data, order)
-					self.stabilizers[type][toric_center.position].planar_coords = position
-
-
-
-class Color_4_6_12(ColorCode):
-
-	def __init__(self, depth, dimension):
-		self.code = '4_6_12'
-		ColorCode.__init__(self, depth, dimension)
-
-	def generateTypes(self):
-		self.types = {'red':{},'blue':{}, 'green':{}}
-		self.types['red'] = {'num_sides':12, 'scale':float(1)/(2*sin(float(pi)/12))}
-		self.types['blue'] = {'num_sides':4, 'scale':float(1)/sqrt(2)}
-		self.types['green'] = {'num_sides':6, 'scale':1}
-
-class Triangular_4_6_12(PlanarCode, Color_4_6_12):
-
-	def __init__(self, depth, dimension = 2):
-		PlanarCode.__init__(self, dimension)
-		Color_4_6_12.__init__(self, depth, dimension)
-
-	def generateStabilizers(self):
-
-		for type in self.types:
-			self.external[type] = {}
-			self.boundary_measures[type] = {}
-			self.boundary_data[type] = []
-
-		depth = self.depth
-		N = int(float(depth)/6)
-		x_dist = round(float(1)/tan(float(pi)/12) + 1, 3)
-		y_dist = round(float(x_dist)/2 + sqrt(3), 3)
-
-		for j in range(N + 1):
-			for i in range(N - j + 1):
-				plaquettes = []
-				red_position = ((i+ float(j)/2) * x_dist, j * y_dist)
-				plaquettes.append({'type':'red','angle':float(pi)/12,'position':(round(red_position[0], 3), round(red_position[1], 3))})
-				plaquettes.append({'type':'green','angle':0,'position':(round(red_position[0], 3), round(red_position[1] + y_dist - float(sqrt(3) + 1)/2, 3) )})
-				plaquettes.append({'type':'green','angle':0,'position':(round(red_position[0] + float(x_dist)/2, 3), round(red_position[1] + float(sqrt(3) + 1)/2, 3)  )})
-				plaquettes.append({'type':'green','angle':0,'position':(round(red_position[0] - float(x_dist)/2, 3), round(red_position[1] + float(sqrt(3) + 1)/2, 3) )})
-				plaquettes.append({'type':'blue','angle':float(3 * pi)/12,'position':(round(red_position[0] - float(x_dist)/2, 3) , round(red_position[1], 3))})
-				plaquettes.append({'type':'blue','angle':float(11 * pi)/12,'position':(round(red_position[0] - float(x_dist)/4, 3), round(red_position[1] + sqrt(3) * float(x_dist)/4, 3) )})
-				
-
-				plaquettes.append({'type':'blue','angle':float(pi)/12,'position':(round(red_position[0] + float(x_dist)/4, 3), round(red_position[1] + sqrt(3) * float(x_dist)/4, 3))})
-				for face in plaquettes:
-					type, angle, position = face['type'], face['angle'], face['position']
-					center = Qubit(position, Charge(), self.colors[type])
-					num_sides, scale = self.types[type]['num_sides'], self.types[type]['scale']
-					data = self.generateStabilizerData(center, scale, num_sides, angle)
-					order = Order(data)
-					
-					self.stabilizers[type][center.position] = Stabilizer(center,data, order)
-		
-
-class Toric_4_6_12(ToricCode, Color_4_6_12):
-
-	def __init__(self, depth, dimension = 2):
-		ToricCode.__init__(self, depth, dimension)
-		Color_4_6_12.__init__(self, depth, dimension)
-		
-
-	def generateStabilizers(self):
-		depth = self.depth
-		N = int(float(depth)/6)
-		x_dist = round(float(1)/tan(float(pi)/12) + 1, 3)
-		y_dist = round(float(x_dist)/2 + sqrt(3), 3)
-		length1, length2 = (N * x_dist, N * y_dist)
-		self.length1, self.length2 = length1, length2
-
-		for i in range(N):
-			for j in range(N):
-				plaquettes = []
-				red_position = ((i+ float(j)/2) * x_dist, j * y_dist)
-				plaquettes.append({'type':'red','angle':float(pi)/12,'position':(round(red_position[0], 3), round(red_position[1], 3))})
-				plaquettes.append({'type':'green','angle':0,'position':(round(red_position[0], 3), round(red_position[1] + y_dist - float(sqrt(3) + 1)/2, 3) )})
-				plaquettes.append({'type':'green','angle':0,'position':(round(red_position[0] + float(x_dist)/2, 3), round(red_position[1] + float(sqrt(3) + 1)/2, 3)  )})
-				plaquettes.append({'type':'green','angle':0,'position':(round(red_position[0] - float(x_dist)/2, 3), round(red_position[1] + float(sqrt(3) + 1)/2, 3) )})
-				plaquettes.append({'type':'blue','angle':float(3 * pi)/12,'position':(round(red_position[0] - float(x_dist)/2, 3) , round(red_position[1], 3))})
-				plaquettes.append({'type':'blue','angle':float(11 * pi)/12,'position':(round(red_position[0] - float(x_dist)/4, 3), round(red_position[1] + sqrt(3) * float(x_dist)/4, 3) )})
-				
-
-				plaquettes.append({'type':'blue','angle':float(pi)/12,'position':(round(red_position[0] + float(x_dist)/4, 3), round(red_position[1] + sqrt(3) * float(x_dist)/4, 3))})
-				for face in plaquettes:
-					type, angle, position = face['type'], face['angle'], face['position']
-					center = Qubit(position, Charge(), self.colors[type])
-					num_sides, scale = self.types[type]['num_sides'], self.types[type]['scale']
-					stabilizer_data = self.generateStabilizerData(center, scale, num_sides, angle)
+					measure = Qubit(position, Charge(), self.colors[type])
+					stabilizer_data = self.generateStabilizerData(position, scale, num_sides, angle)
 					order = Order(stabilizer_data)
-					toric_center = PlanarToToric(center, length1, length2)
-					self.stabilizers[type][toric_center.position] = Stabilizer(toric_center,stabilizer_data, order)
-					self.stabilizers[type][toric_center.position].planar_coords = position
+					toric_position = ToricCoordinates(position, length1, length2)
+					self.stabilizers[type][toric_position] = Stabilizer(type,stabilizer_data, order)
+					self.stabilizers[type][toric_position].planar_coords = position
+					self.syndromes[toric_position] = Qubit(toric_position, charge = Charge(), type = type)
 
 
-					

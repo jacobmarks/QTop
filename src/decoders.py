@@ -24,68 +24,39 @@ import sys
 # Hard Decision Renormalization Group Methods
 
 
-# Example usage as follows:
-# matching = MinWeightMatch()
-# decoder = MWPM_Decoder(matching)
-# Decode(code, syndrome, decoder)
-
-# or for color codes, you could have
-# matching = HDRG_Match()
-# decoder = DSP(matching)
-# Decode(code, syndrome, decoder)
-
-
-
 
 ########### Syndrome generation and manipulation ############
 
-def syndrome(code):
-    syndrome = {}
-    for type in code.types:
-        syndrome[type] = {}
-        for charge_type in ['X', 'Z']:
-            syndrome[type][charge_type] = nx.Graph()
+def addExternalNodes(code, syndrome, type):
+    for charge_type in ['X', 'Z']:
+        external = nx.Graph()
 
-            # Find all non-trivial check operators
-            for measure_position in code.stabilizers[type]:
-                measure_qubit = code.syndromes[measure_position]
-                charge = measure_qubit.charge[charge_type]
-                if charge != 0:
-                    syndrome[type][charge_type].add_node(measure_position, charge = charge)
+        for node in syndrome[type][charge_type].nodes():
+            external_node = code.associatedExternal(node, type)
+            external.add_node(external_node)
+            weight = - distance(node, external_node, type)
+            syndrome[type][charge_type].add_edge(*(node, external_node))
 
-    return syndrome
+            # Ensure even number of elements in syndrome
+            # so min weight matching can proceed successfully
+        if len(syndrome.nodes())%2 != 0:
+            removed_node = external.nodes()[0]
+            min_weight_edge = syndrome[type][charge_type].edges(removed_node)[0]
+            min_weight = syndrome[type][charge_type].get_edge_data(*min_weight_edge)['weight']
+            for node in external.nodes():
+                edge = syndrome[type][charge_type].edges(node)[0]
+                weight = syndrome[type][charge_type].get_edge_data(*edge)['weight']
+                if weight < min_weight:
+                    removed_node = node
+                    min_weight = weight
 
-def addExternalNodes(code, syndrome):
-    for type in code.types:
-        for charge_type in ['X', 'Z']:
-            external = nx.Graph()
+            external.remove_node(removed_node)
+            syndrome[type][charge_type].removed_node(removed_node)
 
-            for node in syndrome[type][charge_type].nodes():
-                external_node = code.associatedExternal(node, type)
-                external.add_node(external_node)
-                weight = - distance(node, external_node, type)
-                syndrome[type][charge_type].add_edge(*(node, external_node))
-
-                # Ensure even number of elements in syndrome
-                # so min weight matching can proceed successfully
-            if len(syndrome.nodes())%2 != 0:
-                removed_node = external.nodes()[0]
-                min_weight_edge = syndrome[type][charge_type].edges(removed_node)[0]
-                min_weight = syndrome[type][charge_type].get_edge_data(*min_weight_edge)['weight']
-                for node in external.nodes():
-                    edge = syndrome[type][charge_type].edges(node)[0]
-                    weight = syndrome[type][charge_type].get_edge_data(*edge)['weight']
-                    if weight < min_weight:
-                        removed_node = node
-                        min_weight = weight
-
-                external.remove_node(removed_node)
-                syndrome[type][charge_type].removed_node(removed_node)
-
-            for ext1 in external.nodes():
-                for ext2 in external.nodes():
-                    if ext1 != ext2:
-                        syndrome[type][charge_type].add_edge(*(ext1, ext2), weight = 0)
+        for ext1 in external.nodes():
+            for ext2 in external.nodes():
+                if ext1 != ext2:
+                    syndrome[type][charge_type].add_edge(*(ext1, ext2), weight = 0)
 
     return syndrome
 
@@ -105,7 +76,7 @@ def Decode(code, syndrome, decoder):
 class decoder(object):
 
     def __init__(self, match):
-        self.match = match
+        self.match = match()
 
     def __call__(self, code, syndrome):
         pairs = self.match(code, syndrome)
@@ -115,32 +86,56 @@ class decoder(object):
 
 class surface_decoder(decoder):
 
-    def __init__(self, matching):
+    def __init__(self, match):
+        self.match = self.match()
+        self.recover = surface_recovery()
+
+    def __call__(self, code):
+        for type in code.types:
+            for charge_type in ['X', 'Z']:
+                syndrome = self.syndrome(code, type, charge_type)
+                pairs = self.match(code, syndrome, type, charge_type)
+        
+                code = self.recover(code, pairs, type, charge_type)
+
+        code = reset_measures(code)
+        return code
+
+    def syndrome(self, code, type, charge_type):
+        syndrome = nx.Graph()
+        # Find all non-trivial check operators
+        for measure_position in code.stabilizers[type]:
+            measure_qubit = code.syndromes[measure_position]
+            charge = measure_qubit.charge[charge_type]
+            if charge != 0:
+                syndrome.add_node(measure_position, charge = charge)
+
+        return syndrome
+
+class MWPM_Decoder(surface_decoder):
+
+    def __init__(self):
         self.match = self.matching()
         self.recover = surface_recovery()
 
-    def __call__(self, code, syndrome):
-        return decoder.__call__(self, code, syndrome)
-
-class MWPM_Decoder(surface_decoder):
-    def __init__(self, match):
-        self.match = match
-        self.recover = surface_recovery()
-
-    def __call__(self, code, syndrome):
-        return surface_decoder.__call__(self, code, syndrome)
+    def __call__(self, code):
+        return surface_decoder.__call__(self, code)
 
     def matching(self):
-        return lambda code, syndrome: MinWeightMatch(code, syndrome)
+        return MinWeightMatch()
 
 class HDRG_Decoder(surface_decoder):
 
-    def __call__(self, code, syndrome):
-        return surface_decoder.__call__(self, code, syndrome)
+    def __init__(self):
+        self.match = self.matching()
+        self.recover = surface_recovery()
+
+    def __call__(self, code):
+        return surface_decoder.__call__(self, code)
 
 
-    def match(self, code, syndrome):
-        return HDRG_match(code, syndrome)
+    def matching(self):
+        return HDRG_Match()
 
 
 # Delfosse Surface Projection decoder for color codes #
@@ -148,12 +143,32 @@ class HDRG_Decoder(surface_decoder):
 class DSP(decoder):
 
     def __init__(self, match):
-        self.match = projection_match(match)
+        self.match = match
         self.recover = fill_recovery()
 
-    def __call__(self, code, syndrome):
-        decoder.__call__(self, code, syndrome)
+    def __call__(self, code):
+        for charge_type in ['X', 'Z']:
+            for shrunk_type in code.types:
+                syndrome = self.syndrome(code, shrunk_type, charge_type)
 
+            pairs[shrunk_type] = self.match(code, syndrome, shrunk_type, charge_type)
+
+            code = self.recover(code, pairs, charge_type)
+
+        code = reset_measures(code)
+        return code
+
+    def syndrome(self, code, shrunk_type, charge_type):
+        syndrome = nx.Graph()
+        # Find all non-trivial check operators
+        for measure_position in code.syndromes:
+            measure_qubit = code.syndromes[measure_position]
+            if measure_qubit.type != shrunk_type:
+                charge = measure_qubit.charge[charge_type]
+                if charge != 0:
+                    syndrome.add_node(measure_position, charge = charge)
+
+        return syndrome
 
 
 
@@ -176,53 +191,27 @@ class MinWeightMatch(Match):
     def __init__(self):
         pass
 
-    def __call__(self, code, syndrome):
-        for type in code.types:
-            for charge_type in ['X', 'Z']:
-                for check1 in syndrome[type][charge_type].nodes():
-                    for check2 in syndrome[type][charge_type].nodes():
-                        if check1 != check2:
-                            weight = - code.distance(check1, check2, type)
-                            syndrome[type][charge_type].add_edge(*(check1, check2), weight=weight)
+    def __call__(self, code, syndrome, type, charge_type):
+        matches = []
 
-        if code.geometry != 'toric':
-            syndrome = addExternalNodes(code, syndrome)
+        for check1 in syndrome.nodes():
+            print check1
+            for check2 in syndrome.nodes():
+                if check1 != check2:
+                    weight = - code.distance(check1, check2, type)
+                    syndrome.add_edge(*(check1, check2), weight=weight)
 
-        matching = {}
-        for type in code.types:
-            matching[type] = {}
-            for charge_type in ['X', 'Z']:
-                temp_matching = nx.max_weight_matching(syndrome[type][charge_type], maxcardinality=True)
-                matching[type][charge_type] = []
-                for node in temp_matching:
-                    neighbor = temp_matching[node]
-                    if [neighbor,node] not in matching[type][charge_type]:
-                        if node in code.dual.nodes() or neighbor in code.dual.nodes():
-                            matching[type][charge_type].append([node, neighbor])
+        # if code.geometry != 'toric':
+        #     syndrome = addExternalNodes(code, syndrome, type)
 
-        return matching
+        temp_matching = nx.max_weight_matching(syndrome, maxcardinality=True)
+        for node in temp_matching:
+            neighbor = temp_matching[node]
+            if [neighbor,node] not in matches:
+                if node in code.dual.nodes() or neighbor in code.dual.nodes():
+                    matches.append([node, neighbor])
 
-class Projection_Match(Match):
-
-    def __init__(self, match):
-        self.match = match
-
-    def __call__(self, code, syndrome):
-        # for type in code.types:
-        pass
-
-
-def SurfaceProjection(code, syndrome, shrunk_type, type):
-    shrunk_lattice = code.shrunk[shrunk_type]
-    shrunk_syndrome = syndrome.copy()
-    for stabilizer in syndrome:
-        if syndrome.node[stabilizer]['type'] == shrunk_type:
-            shrunk_syndrome.remove(stabilizer)
-
-    return shrunk_syndrome
-
-    # now we have a surface code and its corresponding syndrome
-
+        return matches
 
 
  # Hard Decision Renormalization Group matching
@@ -234,7 +223,9 @@ class HDRG_Match(Match):
     def __init__(self):
         pass
 
-    def __call__(self, code, syndrome):
+    def __call__(self, code, syndrome, type, charge_type):
+        matches = []
+
         # Add in external elements
         if code.geometry != 'toric':
             for node in code.external[type]:
@@ -246,40 +237,36 @@ class HDRG_Match(Match):
         # Copy Graph for modification
         unclustered_graph = syndrome.copy()
 
-        while StillClustering(unclustered_graph):
+        while StillClustering(code, unclustered_graph):
             clusters = partition(code, unclustered_graph, scale, type, charge_type)
             for cluster in clusters:
-                if cluster_charge:
-                    NetCharge = cluster_charge(unclustered_graph, cluster, dim)
-                    if NetCharge == 'Neutral':
-                        NeutralClusters.append(cluster)
-                        fuse(code, unclustered_graph, cluster, dim, type, charge_type)
-                        annihilate(unclustered_graph, cluster)
-                    elif NetCharge == 'BoundaryNeutral':
-                        NeutralClusters.append(cluster)
-                        bound_fuse(code, unclustered_graph, cluster, dim, type, charge_type)
-                        annihilate(unclustered_graph, cluster)
+                if fuse_cluster(code, cluster, charge_type):
+                    matches = PairOffCluster(matches, code, cluster, type, charge_type)
+                    annihilate(unclustered_graph, cluster)
+            scale += 1
+        return matches
+        
 
-                scale += 1      # increase distance scale
 
 
 ############### Base recovery classes ################
 # Class of algorithms to apply recovery chains
+
+def reset_measures(code):
+        perfect_gates = ErrorModel()
+        code = code.CodeCycle(perfect_gates, 0)
+        return code
 
 class recovery(object):
 
     def __init__(self):
         pass
 
-    def __call__(self, code, matches):
-        code = self.correct(code, matches)
-        code = self.reset_measures(code)
+    def __call__(self, code, matches, type, charge_type):
+        code = self.correct(code, matches, type, charge_type)
         return code
 
-    def reset_measures(self, code):
-        perfect_gates = ErrorModel()
-        code = code.CodeCycle(perfect_gates, 0)
-        return code
+    
 
 
 class surface_recovery(recovery):
@@ -287,15 +274,13 @@ class surface_recovery(recovery):
     def __init__(self):
         pass
 
-    def correct(self, code, pairs):
-        for type in pairs:
-            for charge_type in pairs[type]:
-                for pair in pairs[type][charge_type]:
-                    code = fuse(code, pair, type, charge_type)
+    def correct(self, code, pairs, type, charge_type):
+        for pair in pairs:
+            code = fuse(code, pair, type, charge_type)
         return code
 
-    def __call__(self, code, pairs):
-        code = recovery.__call__(self, code, pairs)
+    def __call__(self, code, pairs, type, charge_type):
+        code = recovery.__call__(self, code, pairs, type, charge_type)
         return code
 
 
@@ -305,6 +290,9 @@ class fill_recovery(recovery):
 
     def __init__(self):
         pass
+
+    def __call__(self, code, pairs, charge_type):
+        return code
 
 ############# Functions used in matching, clustering and recovery ############
 
@@ -316,10 +304,58 @@ def annihilate(unclustered_graph, cluster):
 # Boolean function, True if still have nodes to cluster
 def StillClustering(code, unclustered_graph):
     for node in unclustered_graph.nodes():
-        for type in code.types:
-            if node not in code.external[type]:
-                return True
-    return False
+        if node in code.syndromes:
+            return True
+        else:
+            return False
+
+def PairOffCluster(matches, code, cluster, type, charge_type):
+    
+    dim = code.dimension
+    unmatched_nodes = cluster
+
+    internal, external = [], []
+
+
+    for node in cluster:
+        if node in code.syndromes:
+            internal.append(node)
+        else:
+            external.append(node)
+
+    for node in internal:
+        MATCHED = False
+        if node in unmatched_nodes:
+            node_charge = code.syndromes[node].charge[charge_type]
+            for partner in internal:
+                if partner in unmatched_nodes:
+                    partner_charge = code.syndromes[partner].charge[charge_type]
+                    if (node_charge + partner_charge)%dim == 0 and node != partner:
+                        matches[charge_type].append([node, partner])
+                        unmatched_nodes.remove(node)
+                        unmatched_nodes.remove(partner)
+                        MATCHED = True
+            # If no internal element to pair with, choose closest external
+            
+            # if not MATCHED:
+            #     for partner in external:
+            #         if partner in unmatched_nodes and not INIT:
+            #             min_dist = code.distance(node, partner)
+            #             min_partner = partner
+            #             INIT = True
+
+            #     for partner in external:
+            #         if partner in unmatched_nodes:
+            #             dist = code.distance(node, partner)
+            #             if dist < min_dist:
+            #                 min_dist = dist
+            #                 min_partner = partner
+
+            #     matches[charge_type].append([node, min_partner])
+            #     unmatched_nodes.remove(node)
+            #     unmatched_nodes.remove(min_partner)
+
+    return matches
 
 
 
@@ -327,52 +363,38 @@ def StillClustering(code, unclustered_graph):
 # A) Neutral: no boundary elements, and sum of charges == 0 mod d
 # B) Boundary-Neutral: has a boundary element
 # C) Charged: no boundary elements, and sum of charges != 0 mod d
-def cluster_charge(code, unclustered_graph, cluster, charge_type):
+# if neutral or boundary-neutral, fuse and annihilate cluster
+def fuse_cluster(code, cluster, charge_type):
     dim = code.dimension
     NetCharge = 0
     BOUND = False
     Charged = True
 
+    ContainsExternal = False
+    ContainsInternal = False
+
     for node in cluster:
-        if node not in code.dual.nodes():
-            BOUND = True
-            for mate in cluster:
-                if node in code.dual.nodes():
-                    Charged = False
-
-        NetCharge += node.charge[charge_type]
-
-    if BOUND:
-        if Charged:
-            return 'Charged'
-        elif NetCharge % d == 0:
-            # Neutral supercedes BoundaryNeutral
-            removed_nodes = []
-            for node in cluster:
-
-                if node not in code.dual.nodes():
-                    removed_nodes.append(node)
-            for node in removed_nodes:
-                cluster.remove(node)
-            return 'Neutral'
+        if node not in code.syndromes:
+            ContainsExternal = True
         else:
-            return 'BoundaryNeutral'
+            ContainsInternal = True
+            NetCharge += code.syndromes[node].charge[charge_type]
 
-    # No Boundary Elements
+    NetCharge = NetCharge%dim
+
+    if ContainsInternal and ContainsExternal or NetCharge == 0:
+        return True
     else:
-        if NetCharge % d == 0:
-            return 'Neutral'
-        else:
-            return 'Charged'
-
+        return False
 
 # partitions nodes into maximally disjoint clusters
 # for a given distance
-def partition(code, unclustered_graph, scale, type):
+def partition(code, unclustered_graph, scale, type, charge_type):
     # Make edges on Unclustered graph
     # between nodes separated by distance 'scale'
     for node1 in unclustered_graph.nodes():
         for node2 in unclustered_graph.nodes():
+            print node1, node2
             if node1 != node2:
                 distance = code.distance(node1, node2, lattice_type = type)
                 if distance <= scale:

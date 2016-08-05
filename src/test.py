@@ -5,6 +5,7 @@ from kitaev import *
 from decoders import *
 import numpy as np
 from simulation import *
+from geometry import *
 
 
 
@@ -16,16 +17,24 @@ errors = probs()
 # model = ErrorModel(initialize = errors)
 # print model.initialize(.3)
 
-# code = KTC(11,2)
+# code = Triangular_6_6_6(15,5)
+code = KSC(15,5)
 model = CodeCapacity()
-matching = MinWeightMatch()
-decoder = MWPM_Decoder(matching)
-p_array = np.linspace(0.15,0.4,100)
-L_array = [3,5]
-num_trials = 10
+code = code.CodeCycle(model,.03)
+matching = HDRG_Match()
+decoder = MWPM_Decoder()
+# decoder = DSP(matching)
+decoder(code)
+code.plot_dual(1, 'Kitaev Toric Code')
+plt.show()
+# 
 
-sim = simulation('kitaev', 'toric', 2, model, decoder)
-run(sim, L_array, p_array, num_trials)
+# p_array = np.linspace(0.15,0.4,100)
+# L_array = [3,5]
+# num_trials = 10
+
+# sim = simulation('kitaev', 'toric', 2, model, decoder)
+# run(sim, L_array, p_array, num_trials)
 
 # p = 0.01
 # # for data in code.data:
@@ -36,7 +45,7 @@ run(sim, L_array, p_array, num_trials)
 # 	# initialize
 # 	code = code.CodeCycle(model,p)
 # 	code = code.CodeCycle(model, p)
-# 	syn = syndrome(code)
+# 	
 
 # 	matching = MinWeightMatch()
 # 	matches = matching(code, syn)
@@ -47,7 +56,6 @@ run(sim, L_array, p_array, num_trials)
 # 	print Assessment(code)
 
 
-# A.plot_primal(1, 'Kitaev Toric Code', charge_types = ['Z'])
 # plt.show()
 
 

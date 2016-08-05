@@ -92,7 +92,7 @@ class PlanarCode(Code):
 		plt.title(str(title))
 		return plt.figure(plot_number)
 
-	def plot_dual(self, plot_number, charge_typ, titlees = ['X','Z']):
+	def plot_dual(self, plot_number, title, charge_types = ['X','Z']):
 		Dual = plt.figure(plot_number)
 		d = self.dimension
 
@@ -119,7 +119,7 @@ class PlanarCode(Code):
 		plt.title(str(title))
 		return plt.figure(plot_number)
 
-	def plot_shrunk(self, shrunk_type, plot_number, title, charge_types):
+	def plot_shrunk(self, shrunk_type, plot_number, title, charge_types = ['X','Z']):
 		Dual = plt.figure(plot_number)
 		d = self.dimension
 
