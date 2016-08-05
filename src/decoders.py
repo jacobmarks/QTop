@@ -14,6 +14,7 @@ from common import *
 from error_models import *
 from math import *
 import networkx as nx
+import sys
 
 
 
@@ -24,13 +25,13 @@ import networkx as nx
 
 
 # Example usage as follows:
-# clustering = MinWeightMatch()
-# decoder = MWPM_Decoder(clustering)
+# matching = MinWeightMatch()
+# decoder = MWPM_Decoder(matching)
 # Decode(code, syndrome, decoder)
 
 # or for color codes, you could have
-# clustering = HDRG_cluster()
-# decoder = DSP(clustering)
+# matching = HDRG_Match()
+# decoder = DSP(matching)
 # Decode(code, syndrome, decoder)
 
 
@@ -46,11 +47,11 @@ def syndrome(code):
             syndrome[type][charge_type] = nx.Graph()
 
             # Find all non-trivial check operators
-            for position in code.stabilizers[type]:
-                measure = code.stabilizers[type][position].center
-                charge = measure.charge[charge_type]
+            for measure_position in code.stabilizers[type]:
+                measure_qubit = code.syndromes[measure_position]
+                charge = measure_qubit.charge[charge_type]
                 if charge != 0:
-                    syndrome[type][charge_type].add_node(measure.position, charge = charge)
+                    syndrome[type][charge_type].add_node(measure_position, charge = charge)
 
     return syndrome
 
@@ -103,47 +104,51 @@ def Decode(code, syndrome, decoder):
 
 class decoder(object):
 
-    def __init__(self, cluster):
-        self.cluster = cluster
+    def __init__(self, match):
+        self.match = match
 
     def __call__(self, code, syndrome):
-        clusters = self.cluster(code, syndrome)
-        code = self.recover(code, clusters)
+        pairs = self.match(code, syndrome)
+        code = self.recover(code, pairs)
         return code
 
 
 class surface_decoder(decoder):
 
-    def __init__(self, cluster):
-        self.cluster = cluster
+    def __init__(self, matching):
+        self.match = self.matching()
         self.recover = surface_recovery()
 
     def __call__(self, code, syndrome):
         return decoder.__call__(self, code, syndrome)
 
 class MWPM_Decoder(surface_decoder):
+    def __init__(self, match):
+        self.match = match
+        self.recover = surface_recovery()
 
     def __call__(self, code, syndrome):
-        surface_decoder.__call__(self, code, syndrome)
+        return surface_decoder.__call__(self, code, syndrome)
 
-    def cluster(self, code, syndrome):
-        return MinWeightMatch(code, syndrome)
+    def matching(self):
+        return lambda code, syndrome: MinWeightMatch(code, syndrome)
 
 class HDRG_Decoder(surface_decoder):
 
     def __call__(self, code, syndrome):
-        surface_decoder.__call__(self, code, syndrome)
+        return surface_decoder.__call__(self, code, syndrome)
 
-    def cluster(self, code, syndrome):
-        HDRG_cluster(code, syndrome)
+
+    def match(self, code, syndrome):
+        return HDRG_match(code, syndrome)
 
 
 # Delfosse Surface Projection decoder for color codes #
 
 class DSP(decoder):
 
-    def __init__(self, cluster):
-        self.cluster = cluster
+    def __init__(self, match):
+        self.match = projection_match(match)
         self.recover = fill_recovery()
 
     def __call__(self, code, syndrome):
@@ -152,15 +157,11 @@ class DSP(decoder):
 
 
 
-
-
-
-
 ############### Base clustering classes ################
 # Class of algorithms to break syndrome up into local clusters
 # of non-trivial stabilizers
 
-class cluster(object):
+class Match(object):
 
     def __init__(self):
         pass
@@ -170,7 +171,7 @@ class cluster(object):
 # Pairs up nodes to minimize overall weight
 # using Edmunds' Blossom algorithm
 
-class MinWeightMatch(cluster):
+class MinWeightMatch(Match):
 
     def __init__(self):
         pass
@@ -201,18 +202,39 @@ class MinWeightMatch(cluster):
 
         return matching
 
+class Projection_Match(Match):
+
+    def __init__(self, match):
+        self.match = match
+
+    def __call__(self, code, syndrome):
+        # for type in code.types:
+        pass
 
 
- # Hard Decision Renormalization Group clustering
+def SurfaceProjection(code, syndrome, shrunk_type, type):
+    shrunk_lattice = code.shrunk[shrunk_type]
+    shrunk_syndrome = syndrome.copy()
+    for stabilizer in syndrome:
+        if syndrome.node[stabilizer]['type'] == shrunk_type:
+            shrunk_syndrome.remove(stabilizer)
+
+    return shrunk_syndrome
+
+    # now we have a surface code and its corresponding syndrome
+
+
+
+ # Hard Decision Renormalization Group matching
  # iteratively increase distance scale, annihilating
  # neutral clusters at each level
 
-class HDRG_cluster(cluster):
+class HDRG_Match(Match):
 
     def __init__(self):
         pass
 
-    def __call__(self, code, syndrome, type, charge_type):
+    def __call__(self, code, syndrome):
         # Add in external elements
         if code.geometry != 'toric':
             for node in code.external[type]:
@@ -249,19 +271,33 @@ class recovery(object):
     def __init__(self):
         pass
 
+    def __call__(self, code, matches):
+        code = self.correct(code, matches)
+        code = self.reset_measures(code)
+        return code
+
+    def reset_measures(self, code):
+        perfect_gates = ErrorModel()
+        code = code.CodeCycle(perfect_gates, 0)
+        return code
+
 
 class surface_recovery(recovery):
 
     def __init__(self):
         pass
 
-    def __call__(self, code, clusters):
-        for type in clusters:
-            for charge_type in clusters[type]:
-                for cluster in clusters[type][charge_type]:
-                    print cluster, 'YUP'
-                    fuse(code, cluster, type, charge_type)
+    def correct(self, code, pairs):
+        for type in pairs:
+            for charge_type in pairs[type]:
+                for pair in pairs[type][charge_type]:
+                    code = fuse(code, pair, type, charge_type)
         return code
+
+    def __call__(self, code, pairs):
+        code = recovery.__call__(self, code, pairs)
+        return code
+
 
 
 # Make closed loops on dual lattice and fill in the interior
@@ -270,7 +306,7 @@ class fill_recovery(recovery):
     def __init__(self):
         pass
 
-############# Functions used in clustering and recovery ############
+############# Functions used in matching, clustering and recovery ############
 
 def annihilate(unclustered_graph, cluster):
     for node in cluster:
@@ -284,30 +320,6 @@ def StillClustering(code, unclustered_graph):
             if node not in code.external[type]:
                 return True
     return False
-
-
-# Choose fixed node for cluster fusion
-def central_node(code, unclustered_graph, cluster):
-    internal = False
-    # Initialize Center
-    for node in cluster:
-        for type in code.types:
-            if node not in code.external[type]:
-                heart = node
-                max_degree = unclustered_graph.degree(heart)
-                internal = True
-                break
-        if internal:
-            break
-
-    for node in cluster:
-        if unclustered_graph.degree(node) > max_degree:
-            for type in code.types:
-                if node not in code.external[type]:
-                    heart = node
-                    max_degree = unclustered_graph.degree(heart)
-
-    return heart
 
 
 
@@ -374,158 +386,55 @@ def partition(code, unclustered_graph, scale, type):
     return Clusters
 
 
-
-def recovery_chain(code, terminal1, terminal2, type, charge_type):
-    EXT1, EXT2 = False, False
-    if terminal1 not in code.shrunk[type]:
-        internal1 = code.external[type][terminal1]['measure'][0]
-        EXT1 = True
+def fuse(code, pair, type, charge_type):
+    # make sure that starting point is internal, because need ordering
+    # to determine sign of the correction charge
+    if pair[0] not in code.syndromes or pair[1] not in code.syndromes:
+        if pair[0] in code.syndromes:
+            start_node = pair[0]
+            end_node = pair[1]
+        else:
+            start_node = pair[1]
+            end_node = pair[0]
+        
+        second_to_last_node = associatedInternalMeasure(end_node)
+        partial_chain = nx.shortest_path(code.shrunk[type],start_node, second_to_last_node)
+        recovery_chain = partial_chain + [end_node]
     else:
-        internal1 = terminal1
+        start_node = pair[0]
+        end_node = pair[1]
+        recovery_chain = nx.shortest_path(code.shrunk[type],start_node,end_node)
 
-    if terminal2 not in code.shrunk[type]:
-        internal2 = code.external[type][terminal2]['measure'][0]
-        EXT2 = True
-    else:
-        internal2 = terminal2
-
-    chain = nx.shortest_path(code.shrunk[type],internal1, internal2)
-    if EXT1:
-        chain = [terminal1] + chain
-    if EXT2:
-        chain = chain + [terminal2]
-
-    return chain
-
-
-def fuse(code, cluster, type, charge_type):
-    print 'YO'
-    # use syndrome transport to move excitations around lattice
-    fusion_graph = code.shrunk[type].subgraph(cluster)
-    # center = central_node(code, fusion_graph, cluster)
-    center = cluster[0]
-    for mate in cluster:
-        if mate != center:
-            print 'PLEASE'
-            code = transport(code, center, mate, type, charge_type)
-    return code
-
-def bound_fuse(code, cluster, type, charge_type):
-    # Find Excess charge and give all charge to one boundary element
-    # then delete the other boundary elements
     dim = code.dimension
-    NetCharge = 0
-    for node in cluster:
-        NetCharge += node.charge[charge_type]
-    NetCharge = NetCharge % dim
+    chain_length = len(recovery_chain) - 1
 
-    IsNeutral = False
-    removed_boundaries = []
-
-    for node in cluster:
-        if node not in code.shrunk[type]:
-            if not IsNeutral:
-                charged_boundary = node
-                charged_boundary.charge[charge_type] = (- NetCharge)% dim
-                IsNeutral = True
-            else:
-                removed_boundaries.append(node)
-
-    for boundary in removed_boundaries:
-        cluster.remove(boundary)
-
-    center = central_node(code, unclustered_graph, cluster)
-    for mate in cluster:
-        if mate != center:
-            transport(code, center, mate, type, charge_type)
-
-def transport(code, fixed_node, mobile_node, type, charge_type):
-    print 'HI'
-    dim = code.dimension
-    chain = recovery_chain(code, mobile_node, fixed_node, type, charge_type)
-    chain_length = len(chain) - 1
-    first_link = chain[0]
-
-    if first_link not in code.dual.nodes():
-        charge = first_link.charge[charge_type]
-        for shared in code.external[type][first_link]['data']:
-            if shared in code.stabilizers[type][chain[1].position].data:
-                pass
-    else:
-        second_link = chain[1]
-        for shared in code.stabilizers[type][first_link].data:
-            if shared in code.stabilizers[type][second_link].data:
-                charge = code.data[shared].charge[charge_type]
-
-
+    
+    charge = code.syndromes[start_node].charge[charge_type]
 
     for link in range(chain_length):
-        previous, next = chain[link], chain[link + 1]
-        for shared in code.stabilizers[type][previous].data:
-            if shared in code.stabilizers[type][next].data:
-                for count in code.stabilizers[type][previous].order:
-                    if shared == code.stabilizers[type][previous].order[count]:
-                        sign = pow(-1, count%2)
-        delta_charge = sign * charge
-        data_charge = code.data[shared].charge[charge_type]
-        code.data[shared].charge[charge_type] = (data_charge - delta_charge)%dim
+        first_node, second_node = recovery_chain[link], recovery_chain[(link + 1)%dim]
+        for data in code.stabilizers[type][first_node].data:
+            if data in code.stabilizers[type][second_node].data:
+                if link != 0:
+                    if (previous_data, data) not in code.primal.edges():
+                        shared_data = data
+                else:
+                    shared_data = data
+
+        for count in code.stabilizers[type][first_node].order:
+            if code.stabilizers[type][first_node].order[count] == shared_data:
+                num_sides = code.types[type]['num_sides']
+                if count in range(num_sides/2):
+                    sign = -1 # Add control to target
+                else:
+                    sign = 1 # subtract control from target
+        previous_data = shared_data
+        previous_charge = code.data[shared_data].charge[charge_type]
+        code.data[shared_data].charge[charge_type] = (previous_charge + sign * charge)%dim
     return code
-
-def bound_transport(Tiling, Dual, fixed_node, mobile_node, d, type):
-    if 'boundary' in mobile_node[1]:
-        charge = mobile_node[1]['charge']
-        first_link = Tiling['Boundary'][type][mobile_node[0]]['measure']
-        shared = Tiling['Boundary'][type][mobile_node[0]]['data']
-        Sign = Tiling['Boundary'][type][mobile_node[0]]['sign']
-        delta_charge = Sign * charge
-        first_link_charge = Tiling['Primal'].node[shared]['charge'][type]
-        Tiling['Primal'].node[shared]['charge'][type] = (first_link_charge - delta_charge)%d
-
-        mobile_node = first_link
-        chain = nx.shortest_path(Dual[type], mobile_node, fixed_node[0])
-        chain_length = len(chain) - 1
-        for link in range(chain_length):
-            previous, next = chain[link], chain[link + 1]
-            for shared in Tiling['Faces'][type][previous]['data']:
-                if shared in Tiling['Faces'][type][next]['data']:
-                    Sign = Tiling['Faces'][type][previous]['data'][shared]
-                    delta_charge = Sign * charge
-                    data_charge = Tiling['Primal'].node[shared]['charge'][type]
-                    Tiling['Primal'].node[shared]['charge'][type] = (data_charge - delta_charge)%d
-
-    else:
-        transport(Tiling, Dual, fixed_node, mobile_node, d, type)
-
-
-
-def bulk_recovery(code, terminal1, terminal2, type, charge_type):
-
-    for link in range(chain_length):
-        vertex1 = measure_chain[link]
-        vertex2 = measure_chain[link + 1]
-        for data_qubit in PlaquetteLattice.neighbors(vertex1):
-            if data_qubit in PlaquetteLattice.neighbors(vertex2):
-                prior_charge = PlaquetteLattice.node[data_qubit][charge][charge_type]
-                PlaquetteLattice.node[data_qubit][charge][charge_type] = (prior_charge + 1) % 2
-
-
-# return the correction chains on dual lattice corresponding
-# to the specified shrunk lattice
-def SurfaceProjection(code, syndrome, shrunk_type, type):
-    shrunk_lattice = code.shrunk[shrunk_type]
-    shrunk_syndrome = syndrome.copy()
-    for stabilizer in syndrome:
-        if syndrome.node[stabilizer]['type'] == shrunk_type:
-            shrunk_syndrome.remove(stabilizer)
-
-    return shrunk_syndrome
-
-    # now we have a surface code and its corresponding syndrome
 
 
 def Assessment(code):
-    perfect_gates = ErrorModel()
-    code = code.CodeCycle(perfect_gates)
     for charge_type in ['X', 'Z']:
         if code.hasLogicalError(charge_type):
             return False

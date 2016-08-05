@@ -39,18 +39,14 @@ class KitaevCode(Code):
 	def generateColors(self):
 		self.colors = {'X':'red', 'Z':'blue','data':'black'}
 
-	def CodeCycle(self, model, p):
+	def CodeCycle(self, model, p = 0):
 
 		# find length of code cycle:
 		num_sides = 4
 
 
 		# Step 1:
-		# for data in self.data:
-		# 	print self.data[data]
 		self = model.Identity(self, p)
-		# for data in self.data:
-		# 	print self.data[data]
 		self = model.Initialize(self, 'X', p)
 
 		# # Step 2:
@@ -123,8 +119,7 @@ class KSC(PlanarCode, KitaevCode):
 					type, position = measure_qubit['type'], measure_qubit['position']
 					self.syndromes[position] = Qubit(position, charge = Charge(), type = type)
 					num_sides = self.types[type]['num_sides']
-					data = generateStabilizerData(position, 1, num_sides, 0)
-					# print data
+					data = self.generateStabilizerData(position, 1, num_sides, 0)
 					if i == 0 or i == depth:
 						if i == 0:
 							boundary_type, sign = 'lower', 1
@@ -161,7 +156,8 @@ class KSC(PlanarCode, KitaevCode):
 						order = Order(data)
 					self.stabilizers[type][position] = Stabilizer(type, data, order)
 				
-
+	def associatedInternalMeasure(self,external_position):
+		pass
 	def associatedExternal(self,measure_position):
 		pass
 
@@ -190,7 +186,7 @@ class KTC(ToricCode, KitaevCode):
 				for type in pos_types:
 					planar_measure_position = pos_types[type]
 					measure_qubit = Qubit(planar_measure_position, Charge(), type)
-					stabilizer_data = generateStabilizerData(planar_measure_position, 1, 4, 0)
+					stabilizer_data = self.generateStabilizerData(planar_measure_position, 1, 4, 0)
 					order = Order(stabilizer_data)
 					toric_measure_position = ToricCoordinates(planar_measure_position, length)
 					self.stabilizers[type][toric_measure_position] = Stabilizer(type,stabilizer_data, order)

@@ -70,6 +70,7 @@ class ErrorModel:
 	def Initialize(self, code, type, p):
 		dimension = code.dimension
 		for measure_position in code.stabilizers[type]:
+			code.syndromes[measure_position].charge = Charge()
 			measure_qubit = code.syndromes[measure_position]
 			code.syndromes[measure_position] = BP_Channel(measure_qubit, dimension, self.initialize(p))
 		return code
@@ -96,7 +97,8 @@ class ErrorModel:
 		return code
 
 	def Sum(self, code, count, type, charge_type, p):
-		if count %2 == 0:
+		num_sides = code.types[type]['num_sides']
+		if count in range(num_sides/2):
 			sign = 1 # Add control to target
 		else:
 			sign = -1 # subtract control from target

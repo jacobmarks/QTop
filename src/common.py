@@ -39,19 +39,6 @@ class Stabilizer:
 		else:
 			self.order = order
 
-def generateStabilizerData(measure_position, scale, num_sides, angle = 0):
-	data = []
-	for k in range(num_sides):
-		x = scale * float(cos(2*pi*k/num_sides))
-		y = scale * float(sin(2*pi*k/num_sides))
-		if angle != 0:
-			x_prime = float(cos(angle))*x - float(sin(angle))*y
-			y_prime = float(sin(angle))*x + float(cos(angle))*y
-			x, y = x_prime, y_prime
-		position = (round(x + measure_position[0], 3) ,round(y  + measure_position[1], 3))
-		data.append(position)
-	return data
-
 def Order(data_list):
 	count, order = 0, {}
 	for data_position in data_list:
@@ -82,6 +69,19 @@ class Code:
 		self.generateTypes()
 		self.generateColors()
 		self.generateStabilizerTypes()
+
+	def generateStabilizerData(self, measure_position, scale, num_sides, angle = 0):
+		data = []
+		for k in range(num_sides):
+			x = scale * float(cos(2*pi*k/num_sides))
+			y = scale * float(sin(2*pi*k/num_sides))
+			if angle != 0:
+				x_prime = float(cos(angle))*x - float(sin(angle))*y
+				y_prime = float(sin(angle))*x + float(cos(angle))*y
+				x, y = x_prime, y_prime
+			position = (round(x + measure_position[0], 3) ,round(y  + measure_position[1], 3))
+			data.append(position)
+		return data
 
 	def generatePrimalEdges(self, stabilizer):
 		stabilizer_type = stabilizer.type

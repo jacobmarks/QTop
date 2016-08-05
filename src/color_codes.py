@@ -110,6 +110,7 @@ class ColorCode(Code):
 class Color_4_8_8(ColorCode):
 
 	def __init__(self, depth, dimension = 2):
+		self.code = '4_8_8'
 		ColorCode.__init__(self, depth, dimension)
 
 	def generateTypes(self):
@@ -287,6 +288,7 @@ class Toric_4_8_8(ToricCode, Color_4_8_8):
 class Color_6_6_6(ColorCode):
 
 	def __init__(self, depth, dimension = 2):
+		self.code = '6_6_6'
 		ColorCode.__init__(self, depth, dimension)
 
 	def generateTypes(self):
@@ -410,6 +412,7 @@ class Toric_6_6_6(ToricCode, Color_6_6_6):
 class Color_4_6_12(ColorCode):
 
 	def __init__(self, depth, dimension):
+		self.code = '4_6_12'
 		ColorCode.__init__(self, depth, dimension)
 
 	def generateTypes(self):

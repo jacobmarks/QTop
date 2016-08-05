@@ -47,8 +47,10 @@ class scaling(object):
 				p_succ.append(self.values[L][p])
 
 		X = [p_array, L_array]
+		print X, p_succ
 		self.params, _ = curve_fit(self.form, X, p_succ, maxfev=int(10e7))
-		self.threshold = self.params[4]
+		self.threshold = self.params[1]
+		print self.threshold
 		return self
 
 	def get_threshold(self):
@@ -56,9 +58,9 @@ class scaling(object):
 			self = self.fit()
 		return self.threshold
 
-	def form(self, X, A, B, C, D, p_th, u, v):
+	def form(self, X, p_th, v):
 
-		return A + B * (X[0] - p_th) * np.power(X[1], float(1)/v) + C * (X[0] - p_th) * np.power(X[1], float(1)/v) ** 2 + D * np.power(X[1], - float(1)/u)
+		return (X[0] - p_th) * np.power(X[1], float(1)/v)
 	def uncertainty(self, p_succ):
 		N = self.num_trials
 		return np.sqrt(float(p_succ*(1 - p_succ))/N )
@@ -75,20 +77,20 @@ class scaling(object):
 
 		for L in self.L:
 			p_array, sim_array = [], []
-			if self.num_trials != False:
-				sigma = []
+			# if self.num_trials != False:
+			# 	sigma = []
 			for p in self.p:
 				p_array.append(p)
 				sim_prob = self.values[L][p]
 				sim_array.append(sim_prob)
 				plt.scatter(p, 1 - sim_prob)
-				if self.num_trials != False:
-					sigma.append(self.uncertainty(sim_prob))
+				# if self.num_trials != False:
+					# sigma.append(self.uncertainty(sim_prob))
 			fit_array = self.form([p_array, [L]], *self.params)
 			success_array = 1 - fit_array
 			plt.plot(p_array, success_array, label= "fitted data for L = " + str(L))
-			if self.num_trials != False:
-				plt.errorbar(p_array, fit_array, yerr = sigma)
+			# if self.num_trials != False:
+			# 	plt.errorbar(p_array, fit_array, yerr = sigma)
 
 		
 	

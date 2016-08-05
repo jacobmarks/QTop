@@ -157,8 +157,8 @@ class ToricCode:
 		self.geometry = 'toric'
 		self.length1, self.length2 = False, False
 
-	def generateStabilizerData(self, center, scale, num_sides, angle = 0):
-		planar_positions = Code.generateStabilizerData(self, center, scale, num_sides, angle)
+	def generateStabilizerData(self, measure_position, scale, num_sides, angle = 0):
+		planar_positions = Code.generateStabilizerData(self, measure_position, scale, num_sides, angle)
 		toric_positions = []
 		for position in planar_positions:
 			toric_positions.append(ToricCoordinates(position, self.length1, self.length2))
@@ -174,17 +174,16 @@ class ToricCode:
 
 		# store list of positions of nonzero data
 		charged_data = []
-		for position in self.primal.nodes():
+		for position in self.data:
 			data = self.data[position]
 			if data.charge[charge_type] != 0:
 				charged_data.append(position)
 
 		subgraph_nodes = []
-		for measure in self.dual:
-			HasTrivialData, HasNontrivialData = False, False
-			for type in self.stabilizers:
-				if measure.position in self.stabilizers[type]:
-					stabilizer = self.stabilizers[type][measure.position]
+		HasTrivialData, HasNontrivialData = False, False
+		for type in self.stabilizers:
+			for measure_position in self.stabilizers[type]:
+				stabilizer = self.stabilizers[type][measure_position]
 			
 			for data in stabilizer.data:
 				if data in charged_data:
@@ -193,7 +192,7 @@ class ToricCode:
 					HasTrivialData = True
 
 			if HasTrivialData and HasNontrivialData:
-				subgraph_nodes.append(measure)
+				subgraph_nodes.append(measure_position)
 
 
 
@@ -243,7 +242,7 @@ class ToricCode:
 			return False
 
 
-	def plot_primal(self, charge_type, plot_number, title):
+	def plot_primal(self, plot_number, title, charge_types = ['X','Z']):
 		Primal = plt.figure(plot_number)
 		ax = Primal.add_subplot(111, projection='3d')
 		d = self.dimension
@@ -254,18 +253,20 @@ class ToricCode:
 				target_qubit = self.syndromes[target_position]
 				color = self.colors[target_qubit.type]
 				[x,y,z] = target_position[0], target_position[1], target_position[2]
-				charge = target_qubit.charge[charge_type]
+				for charge_type in charge_types:
+					charge = target_qubit.charge[charge_type]
+					if charge != 0:
+						ax.scatter(x,y,z,marker="*",color=color,s=200*float(charge)/(d-1))
+
+
+		for data_position in self.data:
+			data_qubit = self.data[data_position]
+			color = self.colors[data_qubit.type]
+			[x,y,z] = data_position[0], data_position[1], data_position[2]
+			for charge_type in charge_types:
+				charge = data_qubit.charge[charge_type]
 				if charge != 0:
 					ax.scatter(x,y,z,marker="*",color=color,s=200*float(charge)/(d-1))
-
-
-		for position in self.primal.nodes():
-			data = self.data[position]
-			color = self.colors[data.type]
-			[x,y,z] = position[0], position[1], position[2]
-			charge = data.charge[charge_type]
-			if charge != 0:
-				ax.scatter(x,y,z,marker="*",color=color,s=200*float(charge)/(d-1))
 
 		for edge in self.primal.edges():
 			[x0,y0,z0] = edge[0][0], edge[0][1], edge[0][2]
@@ -276,7 +277,7 @@ class ToricCode:
 		return plt.figure(plot_number)
 
 
-	def plot_dual(self, charge_type, plot_number, title):
+	def plot_dual(self, plot_number, title, charge_types = ['X','Z']):
 
 		Dual = plt.figure(plot_number)
 		ax = Dual.add_subplot(111, projection='3d')
@@ -294,14 +295,15 @@ class ToricCode:
 				target_qubit = self.syndromes[target_position]
 				color = self.colors[target_qubit.type]
 				[x,y,z] = target_position[0], target_position[1], target_position[2]
-				charge = target_qubit.charge[charge_type]
-				if charge != 0:
-					ax.scatter(x,y,z,marker="*",color=color,s=200*float(charge)/(d-1))
+				for charge_type in charge_types:
+					charge = target_qubit.charge[charge_type]
+					if charge != 0:
+						ax.scatter(x,y,z,marker="*",color=color,s=200*float(charge)/(d-1))
 
 		plt.title(str(title))
 		return plt.figure(plot_number)
 
-	def plot_shrunk(self, shrunk_type, charge_type, plot_number, title):
+	def plot_shrunk(self, shrunk_type, plot_number, title, charge_types = ['X','Z']):
 		# plot all edges of shrunk type
 
 		Dual = plt.figure(plot_number)
@@ -322,9 +324,10 @@ class ToricCode:
 				target_qubit = self.syndromes[target_position]
 				color = self.colors[target_qubit.type]
 				[x,y,z] = target_position[0], target_position[1], target_position[2]
-				charge = target_qubit.charge[charge_type]
-				if charge != 0:
-					ax.scatter(x,y,z,marker="*",color=color,s=200*float(charge)/(d-1))
+				for charge_type in charge_types:
+					charge = target_qubit.charge[charge_type]
+					if charge != 0:
+						ax.scatter(x,y,z,marker="*",color=color,s=200*float(charge)/(d-1))
 
 		plt.title(str(title))
 		return plt.figure(plot_number)
