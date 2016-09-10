@@ -77,8 +77,8 @@ class KitaevCode(Code):
 		for type1 in self.stabilizers:
 			for measure1_position in self.stabilizers[type1]:
 				stabilizer1 = self.stabilizers[type1][measure1_position]
-				measure1_qubit = self.syndromes[measure1_position]
-				self.syndromes[measure1_position] = Qubit(measure1_position, Charge(), type = type1)
+				measure1_qubit = self.syndrome[measure1_position]
+				self.syndrome[measure1_position] = Qubit(measure1_position, Charge(), type = type1)
 				for count in stabilizer1.order:
 					data_position = stabilizer1.order[count]
 					for type2 in self.memberships[data_position]:
@@ -103,7 +103,7 @@ class KSC(PlanarCode, KitaevCode):
 		self.boundary_data = {}
 		for type in self.types:
 			self.external[type] = {}
-			self.boundary_syndromes[type] = {}
+			self.boundary_syndrome[type] = {}
 			self.boundary_data[type] = {'upper':[],'lower':[]}
 
 
@@ -117,7 +117,7 @@ class KSC(PlanarCode, KitaevCode):
 				plaquettes.append({'type':'Z','position':Z_position})
 				for measure_qubit in plaquettes:
 					type, position = measure_qubit['type'], measure_qubit['position']
-					self.syndromes[position] = Qubit(position, charge = Charge(), type = type)
+					self.syndrome[position] = Qubit(position, charge = Charge(), type = type)
 					num_sides = self.types[type]['num_sides']
 					data = self.generateStabilizerData(position, 1, num_sides, 0)
 					if i == 0 or i == depth:
@@ -136,7 +136,7 @@ class KSC(PlanarCode, KitaevCode):
 
 						self.external[type][position] = {'measure':measure_position, 'data':bound_data_position}
 						self.boundary_data[type][boundary_type].append(bound_data_position)
-						self.boundary_syndromes[type][measure_position] = {'external':position,'data':bound_data_position}	
+						self.boundary_syndrome[type][measure_position] = {'external':position,'data':bound_data_position}	
 						continue
 
 					if j == 0 or j == depth - 1:
@@ -192,4 +192,4 @@ class KTC(ToricCode, KitaevCode):
 					self.stabilizers[type][toric_measure_position] = Stabilizer(type,stabilizer_data, order)
 					# Save planar coordinates 
 					self.stabilizers[type][toric_measure_position].planar_coords = planar_measure_position
-					self.syndromes[toric_measure_position] = Qubit(toric_measure_position, charge = Charge(), type = type)
+					self.syndrome[toric_measure_position] = Qubit(toric_measure_position, charge = Charge(), type = type)

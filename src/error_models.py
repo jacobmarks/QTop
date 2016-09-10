@@ -70,9 +70,9 @@ class ErrorModel:
 	def Initialize(self, code, type, p):
 		dimension = code.dimension
 		for measure_position in code.stabilizers[type]:
-			code.syndromes[measure_position].charge = Charge()
-			measure_qubit = code.syndromes[measure_position]
-			code.syndromes[measure_position] = BP_Channel(measure_qubit, dimension, self.initialize(p))
+			code.syndrome[measure_position].charge = Charge()
+			measure_qubit = code.syndrome[measure_position]
+			code.syndrome[measure_position] = BP_Channel(measure_qubit, dimension, self.initialize(p))
 		return code
 
 	def Identity(self, code, p):
@@ -85,15 +85,15 @@ class ErrorModel:
 	def Fourier(self, code, type, p):
 		dimension = code.dimension
 		for measure_position in code.stabilizers[type]:
-			measure_qubit = code.syndromes[measure_position]
-			code.syndromes[measure_position] = BP_Channel(measure_qubit, dimension, self.fourier(p))
+			measure_qubit = code.syndrome[measure_position]
+			code.syndrome[measure_position] = BP_Channel(measure_qubit, dimension, self.fourier(p))
 		return code
 
 	def Measure(self, code, type, p):
 		dimension = code.dimension
 		for measure_position in code.stabilizers[type]:
-			measure_qubit = code.syndromes[measure_position]
-			code.syndromes[measure_position] = BP_Channel(measure_qubit, dimension, self.measure(p))
+			measure_qubit = code.syndrome[measure_position]
+			code.syndrome[measure_position] = BP_Channel(measure_qubit, dimension, self.measure(p))
 		return code
 
 	def Sum(self, code, count, type, charge_type, p):
@@ -107,16 +107,16 @@ class ErrorModel:
 
 		for target_position in code.stabilizers[type]:
 			stabilizer = code.stabilizers[type][target_position]
-			target_qubit = code.syndromes[target_position]
+			target_qubit = code.syndrome[target_position]
 			if count in stabilizer.order:
 				control_position = stabilizer.order[count]
 				control_qubit = code.data[control_position]
 				control_charge = control_qubit.charge[charge_type]
 				target_charge = target_qubit.charge[charge_type]
 
-				code.syndromes[target_position].charge[charge_type] = (target_charge + sign * control_charge)%dimension
+				code.syndrome[target_position].charge[charge_type] = (target_charge + sign * control_charge)%dimension
 				code.data[control_position] = BP_Channel(control_qubit, dimension, self.sum['control'](p))
-			code.syndromes[target_position] = BP_Channel(target_qubit, dimension, self.sum['target'](p))
+			code.syndrome[target_position] = BP_Channel(target_qubit, dimension, self.sum['target'](p))
 		return code
 
 

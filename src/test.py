@@ -14,19 +14,38 @@ def probs():
 	return lambda p: [float(p)/1, float(p)/2, float(p)/3]
 
 errors = probs()
-# model = ErrorModel(initialize = errors)
-# print model.initialize(.3)
+model = ErrorModel(initialize = errors)
+# print model.initialize(.2)
 
-# code = Triangular_6_6_6(15,5)
-code = KSC(15,5)
+# code = Toric_6_6_6(8,2)
+code = KSC(5,2)
+
+# There isn't an X component
+# print code.dual.edges()
+
+
 model = CodeCapacity()
-code = code.CodeCycle(model,.03)
-matching = HDRG_Match()
+code = code.CodeCycle(model,.5)
+matching = MinWeightMatch()
 decoder = MWPM_Decoder()
-# decoder = DSP(matching)
+code.plot_primal(1, 'Before')
+# # decoder = DSP(matching)
 decoder(code)
-code.plot_dual(1, 'Kitaev Toric Code')
+code.plot_primal(2, 'After')
+print Assessment(code)
 plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
 # 
 
 # p_array = np.linspace(0.15,0.4,100)

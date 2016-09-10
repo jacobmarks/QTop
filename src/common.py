@@ -53,7 +53,7 @@ class Code:
 		self.depth = depth
 		self.dimension = dimension
 		self.data = {}
-		self.syndromes = {}
+		self.syndrome = {}
 		self.memberships = {}
 		self.generateProperties()
 		self.generateStabilizers()

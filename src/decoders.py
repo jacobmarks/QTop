@@ -105,7 +105,7 @@ class surface_decoder(decoder):
         syndrome = nx.Graph()
         # Find all non-trivial check operators
         for measure_position in code.stabilizers[type]:
-            measure_qubit = code.syndromes[measure_position]
+            measure_qubit = code.syndrome[measure_position]
             charge = measure_qubit.charge[charge_type]
             if charge != 0:
                 syndrome.add_node(measure_position, charge = charge)
@@ -161,8 +161,8 @@ class DSP(decoder):
     def syndrome(self, code, shrunk_type, charge_type):
         syndrome = nx.Graph()
         # Find all non-trivial check operators
-        for measure_position in code.syndromes:
-            measure_qubit = code.syndromes[measure_position]
+        for measure_position in code.syndrome:
+            measure_qubit = code.syndrome[measure_position]
             if measure_qubit.type != shrunk_type:
                 charge = measure_qubit.charge[charge_type]
                 if charge != 0:
@@ -201,8 +201,8 @@ class MinWeightMatch(Match):
                     weight = - code.distance(check1, check2, type)
                     syndrome.add_edge(*(check1, check2), weight=weight)
 
-        # if code.geometry != 'toric':
-        #     syndrome = addExternalNodes(code, syndrome, type)
+        if code.geometry != 'toric':
+            syndrome = addExternalNodes(code, syndrome, type)
 
         temp_matching = nx.max_weight_matching(syndrome, maxcardinality=True)
         for node in temp_matching:
@@ -304,7 +304,7 @@ def annihilate(unclustered_graph, cluster):
 # Boolean function, True if still have nodes to cluster
 def StillClustering(code, unclustered_graph):
     for node in unclustered_graph.nodes():
-        if node in code.syndromes:
+        if node in code.syndrome:
             return True
         else:
             return False
@@ -318,7 +318,7 @@ def PairOffCluster(matches, code, cluster, type, charge_type):
 
 
     for node in cluster:
-        if node in code.syndromes:
+        if node in code.syndrome:
             internal.append(node)
         else:
             external.append(node)
@@ -326,10 +326,10 @@ def PairOffCluster(matches, code, cluster, type, charge_type):
     for node in internal:
         MATCHED = False
         if node in unmatched_nodes:
-            node_charge = code.syndromes[node].charge[charge_type]
+            node_charge = code.syndrome[node].charge[charge_type]
             for partner in internal:
                 if partner in unmatched_nodes:
-                    partner_charge = code.syndromes[partner].charge[charge_type]
+                    partner_charge = code.syndrome[partner].charge[charge_type]
                     if (node_charge + partner_charge)%dim == 0 and node != partner:
                         matches[charge_type].append([node, partner])
                         unmatched_nodes.remove(node)
@@ -374,11 +374,11 @@ def fuse_cluster(code, cluster, charge_type):
     ContainsInternal = False
 
     for node in cluster:
-        if node not in code.syndromes:
+        if node not in code.syndrome:
             ContainsExternal = True
         else:
             ContainsInternal = True
-            NetCharge += code.syndromes[node].charge[charge_type]
+            NetCharge += code.syndrome[type][charge_type][node].charge[charge_type]
 
     NetCharge = NetCharge%dim
 
@@ -411,8 +411,8 @@ def partition(code, unclustered_graph, scale, type, charge_type):
 def fuse(code, pair, type, charge_type):
     # make sure that starting point is internal, because need ordering
     # to determine sign of the correction charge
-    if pair[0] not in code.syndromes or pair[1] not in code.syndromes:
-        if pair[0] in code.syndromes:
+    if pair[0] not in code.syndrome or pair[1] not in code.syndrome:
+        if pair[0] in code.syndrome:
             start_node = pair[0]
             end_node = pair[1]
         else:
@@ -426,15 +426,18 @@ def fuse(code, pair, type, charge_type):
         start_node = pair[0]
         end_node = pair[1]
         recovery_chain = nx.shortest_path(code.shrunk[type],start_node,end_node)
-
+        print recovery_chain
     dim = code.dimension
     chain_length = len(recovery_chain) - 1
 
     
-    charge = code.syndromes[start_node].charge[charge_type]
+    charge = code.syndrome[start_node].charge[charge_type]
+
+
 
     for link in range(chain_length):
-        first_node, second_node = recovery_chain[link], recovery_chain[(link + 1)%dim]
+        first_node, second_node = recovery_chain[link], recovery_chain[(link + 1)%(chain_length+1)]
+        print 'first and second measure nodes:', first_node, second_node
         for data in code.stabilizers[type][first_node].data:
             if data in code.stabilizers[type][second_node].data:
                 if link != 0:

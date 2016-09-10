@@ -30,7 +30,7 @@ class PlanarCode(Code):
 
 	def __init__(self, dimension = 2):
 		self.geometry = 'planar'
-		self.boundary_syndromes = {}
+		self.boundary_syndrome = {}
 		self.boundary_data = {}
 		self.external = {}
 
@@ -66,7 +66,7 @@ class PlanarCode(Code):
 		for charge_type in charge_types:
 			for type in self.types:
 				for measure_position in self.stabilizers[type]:
-					measure_qubit = self.syndromes[measure_position]
+					measure_qubit = self.syndrome[measure_position]
 					charge = measure_qubit.charge[charge_type]
 					if charge != 0:
 						plt.scatter(*measure_position,marker="*", color = self.colors[type], s=200*float(charge)/(d-1))
@@ -80,10 +80,10 @@ class PlanarCode(Code):
 
 			for position in self.primal.nodes():
 				charge = self.data[position].charge[charge_type]
-				if charge != 0:
-					plt.scatter(*position,marker="*", color= self.colors['data'], s=200*float(charge)/(d-1))
-				else:
-					plt.scatter(*position, color = self.colors['data'])
+				# if charge != 0:
+				# 	plt.scatter(*position,marker="*", color= self.colors['data'], s=200*float(charge)/(d-1))
+				# else:
+				plt.scatter(*position, color = self.colors['data'])
 
 
 		for edge in self.primal.edges():
@@ -100,7 +100,7 @@ class PlanarCode(Code):
 
 			for type in self.types:
 				for measure_position in self.stabilizers[type]:
-					measure_qubit = self.syndromes[measure_position]
+					measure_qubit = self.syndrome[measure_position]
 
 					charge = measure_qubit.charge[charge_type]
 					if charge != 0:
@@ -129,7 +129,7 @@ class PlanarCode(Code):
 					plt.scatter(*ext, marker="D", color = self.colors[type])
 				continue
 			for measure_position in self.stabilizers[type]:
-				measure_qubit = self.syndromes[measure_position]
+				measure_qubit = self.syndrome[measure_position]
 				for charge_type in charge_types:
 					charge = measure_qubit.charge[charge_type]
 					if charge != 0:
@@ -250,10 +250,10 @@ class ToricCode:
 		for type in self.stabilizers:
 			for target_position in self.stabilizers[type]:
 				stabilizer = self.stabilizers[type][target_position]
-				target_qubit = self.syndromes[target_position]
+				target_qubit = self.syndrome[target_position]
 				color = self.colors[target_qubit.type]
 				[x,y,z] = target_position[0], target_position[1], target_position[2]
-				for charge_type in charge_types:
+				for charge_type in ['Z']:
 					charge = target_qubit.charge[charge_type]
 					if charge != 0:
 						ax.scatter(x,y,z,marker="*",color=color,s=200*float(charge)/(d-1))
@@ -263,7 +263,7 @@ class ToricCode:
 			data_qubit = self.data[data_position]
 			color = self.colors[data_qubit.type]
 			[x,y,z] = data_position[0], data_position[1], data_position[2]
-			for charge_type in charge_types:
+			for charge_type in ['Z']:
 				charge = data_qubit.charge[charge_type]
 				if charge != 0:
 					ax.scatter(x,y,z,marker="*",color=color,s=200*float(charge)/(d-1))
@@ -292,7 +292,7 @@ class ToricCode:
 		for type in self.stabilizers:
 			for target_position in self.stabilizers[type]:
 				stabilizer = self.stabilizers[type][target_position]
-				target_qubit = self.syndromes[target_position]
+				target_qubit = self.syndrome[target_position]
 				color = self.colors[target_qubit.type]
 				[x,y,z] = target_position[0], target_position[1], target_position[2]
 				for charge_type in charge_types:
@@ -321,7 +321,7 @@ class ToricCode:
 
 			for target_position in self.stabilizers[type]:
 				stabilizer = self.stabilizers[type][target_position]
-				target_qubit = self.syndromes[target_position]
+				target_qubit = self.syndrome[target_position]
 				color = self.colors[target_qubit.type]
 				[x,y,z] = target_position[0], target_position[1], target_position[2]
 				for charge_type in charge_types:
