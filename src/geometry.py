@@ -96,7 +96,7 @@ class PlanarCode(Code):
 		Dual = plt.figure(plot_number)
 		d = self.dimension
 
-		for charge_type in charge_types:
+		for charge_type in ['X', 'Z']:
 
 			for type in self.types:
 				for measure_position in self.stabilizers[type]:
@@ -168,7 +168,7 @@ class ToricCode:
 
 	def hasLogicalError(self, charge_type):
 		# Make graph from subgraph of dual using only stabilizers with some, but not all
-		# of their member data qubits qith non-zero charge
+		# of their member data qubits with non-zero charge
 		# look for self-loops with non-trivial crossing number
 		# if one exists, we have a logical error
 
@@ -199,6 +199,7 @@ class ToricCode:
 		Homologies = self.dual.subgraph(subgraph_nodes)
 		# Find all cycles, then decide if each is trivial
 		for cycle in nx.cycle_basis(Homologies):
+			print "cycle: ", cycle
 			if self.notTrivialCycle(cycle):
 				return True
 
@@ -253,7 +254,7 @@ class ToricCode:
 				target_qubit = self.syndrome[target_position]
 				color = self.colors[target_qubit.type]
 				[x,y,z] = target_position[0], target_position[1], target_position[2]
-				for charge_type in ['Z']:
+				for charge_type in charge_types:
 					charge = target_qubit.charge[charge_type]
 					if charge != 0:
 						ax.scatter(x,y,z,marker="*",color=color,s=200*float(charge)/(d-1))
@@ -263,7 +264,7 @@ class ToricCode:
 			data_qubit = self.data[data_position]
 			color = self.colors[data_qubit.type]
 			[x,y,z] = data_position[0], data_position[1], data_position[2]
-			for charge_type in ['Z']:
+			for charge_type in charge_types:
 				charge = data_qubit.charge[charge_type]
 				if charge != 0:
 					ax.scatter(x,y,z,marker="*",color=color,s=200*float(charge)/(d-1))
@@ -291,14 +292,13 @@ class ToricCode:
 		
 		for type in self.stabilizers:
 			for target_position in self.stabilizers[type]:
-				stabilizer = self.stabilizers[type][target_position]
 				target_qubit = self.syndrome[target_position]
 				color = self.colors[target_qubit.type]
 				[x,y,z] = target_position[0], target_position[1], target_position[2]
-				# for charge_type in charge_types:
-				# 	charge = target_qubit.charge[charge_type]
-				# 	if charge != 0:
-				# 		ax.scatter(x,y,z,marker="*",color=color,s=200*float(charge)/(d-1))
+				for charge_type in ['X', 'Z']:
+					charge = target_qubit.charge[charge_type]
+					if charge != 0:
+						ax.scatter(x,y,z,marker="*",color=color,s=200*float(charge)/(d-1))
 
 		plt.title(str(title))
 		return plt.figure(plot_number)
@@ -320,11 +320,10 @@ class ToricCode:
 				continue
 
 			for target_position in self.stabilizers[type]:
-				stabilizer = self.stabilizers[type][target_position]
 				target_qubit = self.syndrome[target_position]
 				color = self.colors[target_qubit.type]
 				[x,y,z] = target_position[0], target_position[1], target_position[2]
-				for charge_type in charge_types:
+				for charge_type in ['X', 'Z']:
 					charge = target_qubit.charge[charge_type]
 					if charge != 0:
 						ax.scatter(x,y,z,marker="*",color=color,s=200*float(charge)/(d-1))

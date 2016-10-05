@@ -29,22 +29,17 @@ def probs():
 def main():
 	errors = probs()
 	model = ErrorModel(initialize = errors)
-# print model.initialize(.2)
 
-# code = Toric_6_6_6(8,2)
 	code = KTC(5,2)
-
-# There isn't an X component
-# print code.dual.edges()
-
-
 	model = CodeCapacity()
 	code = code.CodeCycle(model,.1)
 	matching = MinWeightMatch()
-	decoder = MWPM_Decoder()
-	code.plot_primal(1, 'Before')
-	code = decoder(code)
-	code.plot_primal(2, 'After')
+	# decoder = MWPM_Decoder()
+	# code.plot_primal(1, 'Before')
+	# code = decoder(code)
+	code.plot_primal(1, 'After')
+	code.plot_dual('Z', 2, 'After')
+	code.plot_shrunk('Z', 3, 'After')
 	print Assessment(code)
 	plt.show()
 

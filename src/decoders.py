@@ -195,7 +195,6 @@ class MinWeightMatch(Match):
         matches = []
 
         for check1 in syndrome.nodes():
-            print check1
             for check2 in syndrome.nodes():
                 if check1 != check2:
                     weight = - code.distance(check1, check2, type)
@@ -394,7 +393,6 @@ def partition(code, unclustered_graph, scale, type, charge_type):
     # between nodes separated by distance 'scale'
     for node1 in unclustered_graph.nodes():
         for node2 in unclustered_graph.nodes():
-            print node1, node2
             if node1 != node2:
                 distance = code.distance(node1, node2, lattice_type = type)
                 if distance <= scale:
@@ -437,7 +435,6 @@ def fuse(code, pair, type, charge_type):
 
     for link in range(chain_length):
         first_node, second_node = recovery_chain[link], recovery_chain[(link + 1)%(chain_length+1)]
-        print 'first and second measure nodes:', first_node, second_node
         for data in code.stabilizers[type][first_node].data:
             if data in code.stabilizers[type][second_node].data:
                 if link != 0:
