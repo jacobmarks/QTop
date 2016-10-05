@@ -139,12 +139,3 @@ class Code:
  			type2 = self.syndromes[qubit2].type
 			qubit2 = self.external[type2][0]
  			return nx.shortest_path_length(lattice, qubit1, qubit2) + 2
-
-	# def plot(self, plot_number, title, charge_types = ['X','Z'], lattice = 'primal'):
-	# 	if lattice == 'primal':
-	# 		plot_primal(self, plot_number, title, charge_types)
-	# 	elif lattice == 'dual':
-	# 		plot_dual(self, plot_number, title, charge_types)
-	# 	else:
-	# 		# input is shrunk lattice type
-	# 		plot_shrunk(self, lattice, plot_number, title, charge_types)

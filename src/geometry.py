@@ -295,10 +295,10 @@ class ToricCode:
 				target_qubit = self.syndrome[target_position]
 				color = self.colors[target_qubit.type]
 				[x,y,z] = target_position[0], target_position[1], target_position[2]
-				for charge_type in charge_types:
-					charge = target_qubit.charge[charge_type]
-					if charge != 0:
-						ax.scatter(x,y,z,marker="*",color=color,s=200*float(charge)/(d-1))
+				# for charge_type in charge_types:
+				# 	charge = target_qubit.charge[charge_type]
+				# 	if charge != 0:
+				# 		ax.scatter(x,y,z,marker="*",color=color,s=200*float(charge)/(d-1))
 
 		plt.title(str(title))
 		return plt.figure(plot_number)

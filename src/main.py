@@ -10,47 +10,80 @@
  # the Free Software Foundation, either version 3 of the License, or
  # (at your option) any later version.
 
+
 from common import *
-from geometry import *
 from error_models import *
 from kitaev import *
-from color_codes import *
 from decoders import *
+import numpy as np
+from simulation import *
+from geometry import *
+
+
+
+
+def probs():
+	return lambda p: [float(p)/1, float(p)/2, float(p)/3]
+
 
 def main():
-	code = KTC(8, 2)
-	
-	
-	model = CodeCapacity(.01)
-	code = code.CodeCycle(model)
-	syn = syndrome(code)
+	errors = probs()
+	model = ErrorModel(initialize = errors)
+# print model.initialize(.2)
 
-	MW_cluster = MinWeightMatch()
-	matching = MW_cluster(code, syn)
-	print matching
-	# rec = surface_recovery()
-	# code = rec(code, matching)
+# code = Toric_6_6_6(8,2)
+	code = KTC(5,2)
 
-	decoder = MWPM_Decoder(MW_cluster)
-	# code = decoder(code, syn)
-	Decode(code, syn, decoder)
-	code.plot_shrunk('X', 'Z', 1, 'Shrunk Z Lattice')
-	code.plot_shrunk('Z', 'X', 2, 'Shrunk X Lattice')
-	perfect_gates = ErrorModel()
-	code = code.CodeCycle(perfect_gates)
-	# code = Decode(code, syn, decoder)
+# There isn't an X component
+# print code.dual.edges()
 
-	# code.plot_primal('Z', 1, 'Primal Z Lattice')
-	# code.plot_primal('blue', 2, 'Primal Z Lattice')
-	# code.plot_dual('X', 3, 'Dual X Lattice')
-	code.plot_shrunk('X', 'Z', 3, 'Shrunk Z Lattice')
-	code.plot_shrunk('Z', 'X', 4, 'Shrunk X Lattice')
-	# code.plot_shrunk('green', 'Z', 5, 'Shrunk green Lattice')
-	# code.plot_shrunk('blue', 'Z', 6, 'Shrunk blue Lattice')
+
+	model = CodeCapacity()
+	code = code.CodeCycle(model,.1)
+	matching = MinWeightMatch()
+	decoder = MWPM_Decoder()
+	code.plot_primal(1, 'Before')
+	code = decoder(code)
+	code.plot_primal(2, 'After')
+	print Assessment(code)
 	plt.show()
-
-# print code.hasLogicalError('Z')
 
 
 if __name__ == '__main__':
 	main()
+
+
+
+# 
+
+# p_array = np.linspace(0.15,0.4,100)
+# L_array = [3,5]
+# num_trials = 10
+
+# sim = simulation('kitaev', 'toric', 2, model, decoder)
+# run(sim, L_array, p_array, num_trials)
+
+# p = 0.01
+# # for data in code.data:
+# # 	print code.data[data]
+# for p in np.linspace(0.08,0.15,10)
+# 	failures = 
+# 	for trial in range(1000):
+# 	# initialize
+# 	code = code.CodeCycle(model,p)
+# 	code = code.CodeCycle(model, p)
+# 	
+
+# 	matching = MinWeightMatch()
+# 	matches = matching(code, syn)
+
+# 	recover = surface_recovery()
+
+# 	A = recover(code, matches)
+# 	print Assessment(code)
+
+
+# plt.show()
+
+
+
