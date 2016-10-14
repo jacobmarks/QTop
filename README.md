@@ -184,7 +184,7 @@ probabilities = np.logspace(-3,-0.5,10)
 trials = 1000
 run(simulation, depths, probabilities, trials)
 ```
-This will return a logical error rate for each depth-probability combination. Together, this logical error rates will give you an estimate of the code's threshold.
+This will return a logical error rate for each depth-probability combination. Together, this logical error rate will give you an estimate of the code's threshold.
 
 
 ---
