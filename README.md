@@ -70,26 +70,26 @@ In QTop, `Code` is the base class for topological error correcting codes. From t
 Let's say we want to instantiate a kitaev surface code of code depth 11, and qudit dimension 3. The relevant subclass of `Code` is `KSC`. 
 
 ```python
-code = KSC(depth = 11, dimension = 3)
+code = KTC(depth = 11, dimension = 3)
 ```
 
 We can view this code with the plotting methods
 
 ```python
-code.plot_primal(1, 'Kitaev Surface Code')
+code.plot_primal(1, 'Kitaev Toric Code')
 plt.show()
 ```
 
 which produces the following plot:
 
-![alt text](/visualizations/Kitaev_Surface_Code.png)
+![alt text](/visualizations/Kitaev_Toric_Code.png)
 
-Circles are associated with physical qubits inside the lattice, while diamonds are external elements, which are quasi-excitations that are utilized in the decoding process, but don't correspond to anything physical. Black represents data, while blue and red respectively represent measure-X and measure-Z qudits. Edges are connections between data qudits.
+Black lines represent connections between data qubits. Measurement qubits lie at the center of each diamond.
 
 If instead, we wanted to view only the dual lattice, we could type:
 
 ```python
-code.dual(1, 'Kitaev Surface Code')
+code.dual(1, 'Kitaev Toric Code')
 plt.show()
 ```
 
@@ -127,7 +127,7 @@ code = code.CodeCycle(model, p)
 
 after this, errors in our code, i.e. non-trivial eigenvalue measurements, are indicated by stars. The size of the star scales with the magnitude of the error.
 
-![alt text](/visualizations/KSC_with_errors.png)
+![alt text](/visualizations/KTC_with_errors.png)
 
 Our error syndrome is thus
 
