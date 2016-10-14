@@ -82,14 +82,14 @@ plt.show()
 
 which produces the following plot:
 
-![alt text](/visualizations/Kitaev_Surface_Code.png)
+![alt text](/visualizations/Kitaev_Toric_Code.png)
 
-Circles are associated with physical qubits inside the lattice, while diamonds are external elements, which are quasi-excitations that are utilized in the decoding process, but don't correspond to anything physical. Black represents data, while blue and red respectively represent measure-X and measure-Z qudits. Edges are connections between data qudits.
+Black lines represent connections between data qubits. Measurement qubits lie at the center of each diamond.
 
 If instead, we wanted to view only the dual lattice, we could type:
 
 ```python
-code.dual(1, 'Kitaev Surface Code')
+code.dual(1, 'Kitaev Toric Code')
 plt.show()
 ```
 
@@ -127,7 +127,7 @@ code = code.CodeCycle(model, p)
 
 after this, errors in our code, i.e. non-trivial eigenvalue measurements, are indicated by stars. The size of the star scales with the magnitude of the error.
 
-![alt text](/visualizations/KSC_with_errors.png)
+![alt text](/visualizations/KTC_with_errors.png)
 
 Our error syndrome is thus
 
@@ -184,7 +184,7 @@ probabilities = np.logspace(-3,-0.5,10)
 trials = 1000
 run(simulation, depths, probabilities, trials)
 ```
-This will return a logical error rate for each depth-probability combination. Together, this logical error rates will give you an estimate of the code's threshold.
+This will return a logical error rate for each depth-probability combination. Together, this logical error rate will give you an estimate of the code's threshold.
 
 
 ---
