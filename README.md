@@ -70,13 +70,13 @@ In QTop, `Code` is the base class for topological error correcting codes. From t
 Let's say we want to instantiate a kitaev surface code of code depth 11, and qudit dimension 3. The relevant subclass of `Code` is `KSC`. 
 
 ```python
-code = KSC(depth = 11, dimension = 3)
+code = KTC(depth = 11, dimension = 3)
 ```
 
 We can view this code with the plotting methods
 
 ```python
-code.plot_primal(1, 'Kitaev Surface Code')
+code.plot_primal(1, 'Kitaev Toric Code')
 plt.show()
 ```
 
@@ -168,7 +168,7 @@ code = decoder(code)
 Finally, we can assess our decoding by checking to see if any logical errors have occurred. 
 
 ```python
-print = Assessment(code)
+print Assessment(code)
 ```
 
 ## Putting it all Together
