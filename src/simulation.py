@@ -21,24 +21,15 @@ from common import *
 from decoders import *
 
 def GenerateCode(code_type, geometry, depth, dimension):
-	if geometry == 'planar':
-		if code_type == 'kitaev':
-			code = KSC(depth, dimension)
-		if code_type == '4_8_8':
-			code = Triangular_4_8_8(depth, dimension)
-		if code_type == '6_6_6':
-			code = Triangular_6_6_6(depth, dimension)
-		if code_type == '4_6_12':
-			code = Triangular_4_6_12(depth, dimension)
-	else:
-		if code_type == 'kitaev':
-			code = KTC(depth, dimension)
-		if code_type == '4_8_8':
-			code = Toric_4_8_8(depth, dimension)
-		if code_type == '6_6_6':
-			code = Toric_6_6_6(depth, dimension)
-		if code_type == '4_6_12':
-			code = Toric_4_6_12(depth, dimension)
+
+	if code_type == 'kitaev':
+		code = KTC(depth, dimension)
+	if code_type == '4_8_8':
+		code = Toric_4_8_8(depth, dimension)
+	if code_type == '6_6_6':
+		code = Toric_6_6_6(depth, dimension)
+	if code_type == '4_6_12':
+		code = Toric_4_6_12(depth, dimension)
 	return code
 
 

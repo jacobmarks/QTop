@@ -7,11 +7,10 @@ facilitating the addition and assessment of new topological computing
 architectures, as well as the development of novel decoders.
 
 QTop allows for the simulation of topologies with arbitrary code depth,
-qudit dimension, and error models. Both planar and toric geometries are 
-supported. Currently, QTop features Kitaev quantum double models, as well as
-color codes in all 3-regular planar tilings. In the future, I hope to add
-3-dimensional color codes, gauge color codes, and more exotic topoligical
-systems.
+qudit dimension, and error models. Currently, QTop features Kitaev quantum 
+double models, as well as color codes in 3-regular planar tilings. In 
+the future, I hope to add 3-dimensional color codes, gauge color codes, and 
+more exotic topological systems.
 
 
 Copyright (c) 2016 Jacob Marks, jacob DOT marks AT yale DOT edu.

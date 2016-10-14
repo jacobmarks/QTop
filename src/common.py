@@ -123,19 +123,4 @@ class Code:
 		else:
 			lattice = self.shrunk[lattice_type].copy()
 			
-		if qubit1 in lattice.nodes() and  qubit2 in lattice.nodes():
-			return nx.shortest_path_length(self.dual, qubit1, qubit2)
-		elif qubit1 in lattice.nodes() and qubit2 not in lattice.nodes():
-			type = self.syndromes[qubit2].type
-			qubit2 = self.external[type][0]
-			return nx.shortest_path_length(lattice, qubit1, qubit2) + 1
-		elif qubit1 not in lattice.nodes() and qubit2 in lattice.nodes():
-			type = self.syndromes[qubit1].type
-			qubit1 = self.external[type][0]
-			return nx.shortest_path_length(lattice, qubit1, qubit2) + 1
- 		else:
- 			type1 = self.syndromes[qubit1].type
-			qubit1 = self.external[type1][0]
- 			type2 = self.syndromes[qubit2].type
-			qubit2 = self.external[type2][0]
- 			return nx.shortest_path_length(lattice, qubit1, qubit2) + 2
+		return nx.shortest_path_length(lattice, qubit1, qubit2)

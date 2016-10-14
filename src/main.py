@@ -20,65 +20,22 @@ from simulation import *
 from geometry import *
 
 
-
-
-def probs():
-	return lambda p: [float(p)/1, float(p)/2, float(p)/3]
-
-
 def main():
-	errors = probs()
-	model = ErrorModel(initialize = errors)
-
 	code = KTC(5,2)
 	model = CodeCapacity()
 	code = code.CodeCycle(model,.1)
 	matching = MinWeightMatch()
-	# decoder = MWPM_Decoder()
-	# code.plot_primal(1, 'Before')
-	# code = decoder(code)
-	code.plot_primal(1, 'After')
-	code.plot_dual('Z', 2, 'After')
-	code.plot_shrunk('Z', 3, 'After')
+	decoder = MWPM_Decoder()
+	code.plot_primal(1, 'Before')
+	code = decoder(code)
+	code.plot_primal(2, 'Primal')
+	code.plot_dual('Z', 3, 'Dual')
+	code.plot_shrunk('Z', 4, 'Shrunk')
 	print Assessment(code)
 	plt.show()
 
 
 if __name__ == '__main__':
 	main()
-
-
-
-# 
-
-# p_array = np.linspace(0.15,0.4,100)
-# L_array = [3,5]
-# num_trials = 10
-
-# sim = simulation('kitaev', 'toric', 2, model, decoder)
-# run(sim, L_array, p_array, num_trials)
-
-# p = 0.01
-# # for data in code.data:
-# # 	print code.data[data]
-# for p in np.linspace(0.08,0.15,10)
-# 	failures = 
-# 	for trial in range(1000):
-# 	# initialize
-# 	code = code.CodeCycle(model,p)
-# 	code = code.CodeCycle(model, p)
-# 	
-
-# 	matching = MinWeightMatch()
-# 	matches = matching(code, syn)
-
-# 	recover = surface_recovery()
-
-# 	A = recover(code, matches)
-# 	print Assessment(code)
-
-
-# plt.show()
-
 
 

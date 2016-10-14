@@ -25,44 +25,6 @@ import sys
 
 
 
-########### Syndrome generation and manipulation ############
-
-def addExternalNodes(code, syndrome, type):
-    for charge_type in ['X', 'Z']:
-        external = nx.Graph()
-
-        for node in syndrome[type][charge_type].nodes():
-            external_node = code.associatedExternal(node, type)
-            external.add_node(external_node)
-            weight = - distance(node, external_node, type)
-            syndrome[type][charge_type].add_edge(*(node, external_node))
-
-            # Ensure even number of elements in syndrome
-            # so min weight matching can proceed successfully
-        if len(syndrome.nodes())%2 != 0:
-            removed_node = external.nodes()[0]
-            min_weight_edge = syndrome[type][charge_type].edges(removed_node)[0]
-            min_weight = syndrome[type][charge_type].get_edge_data(*min_weight_edge)['weight']
-            for node in external.nodes():
-                edge = syndrome[type][charge_type].edges(node)[0]
-                weight = syndrome[type][charge_type].get_edge_data(*edge)['weight']
-                if weight < min_weight:
-                    removed_node = node
-                    min_weight = weight
-
-            external.remove_node(removed_node)
-            syndrome[type][charge_type].removed_node(removed_node)
-
-        for ext1 in external.nodes():
-            for ext2 in external.nodes():
-                if ext1 != ext2:
-                    syndrome[type][charge_type].add_edge(*(ext1, ext2), weight = 0)
-
-    return syndrome
-
-
-
-
 ############ Decode function and base decoder classes ############
 
 
@@ -200,9 +162,6 @@ class MinWeightMatch(Match):
                     weight = - code.distance(check1, check2, type)
                     syndrome.add_edge(*(check1, check2), weight=weight)
 
-        if code.geometry != 'toric':
-            syndrome = addExternalNodes(code, syndrome, type)
-
         temp_matching = nx.max_weight_matching(syndrome, maxcardinality=True)
         for node in temp_matching:
             neighbor = temp_matching[node]
@@ -224,11 +183,6 @@ class HDRG_Match(Match):
 
     def __call__(self, code, syndrome, type, charge_type):
         matches = []
-
-        # Add in external elements
-        if code.geometry != 'toric':
-            for node in code.external[type]:
-                syndrome.add_node(node)
 
         scale = 1
         NeutralClusters = []
@@ -313,20 +267,14 @@ def PairOffCluster(matches, code, cluster, type, charge_type):
     dim = code.dimension
     unmatched_nodes = cluster
 
-    internal, external = [], []
+    internal = []
 
 
     for node in cluster:
-        if node in code.syndrome:
-            internal.append(node)
-        else:
-            external.append(node)
-
-    for node in internal:
         MATCHED = False
         if node in unmatched_nodes:
             node_charge = code.syndrome[node].charge[charge_type]
-            for partner in internal:
+            for partner in cluster:
                 if partner in unmatched_nodes:
                     partner_charge = code.syndrome[partner].charge[charge_type]
                     if (node_charge + partner_charge)%dim == 0 and node != partner:
@@ -334,25 +282,6 @@ def PairOffCluster(matches, code, cluster, type, charge_type):
                         unmatched_nodes.remove(node)
                         unmatched_nodes.remove(partner)
                         MATCHED = True
-            # If no internal element to pair with, choose closest external
-            
-            # if not MATCHED:
-            #     for partner in external:
-            #         if partner in unmatched_nodes and not INIT:
-            #             min_dist = code.distance(node, partner)
-            #             min_partner = partner
-            #             INIT = True
-
-            #     for partner in external:
-            #         if partner in unmatched_nodes:
-            #             dist = code.distance(node, partner)
-            #             if dist < min_dist:
-            #                 min_dist = dist
-            #                 min_partner = partner
-
-            #     matches[charge_type].append([node, min_partner])
-            #     unmatched_nodes.remove(node)
-            #     unmatched_nodes.remove(min_partner)
 
     return matches
 
@@ -360,28 +289,20 @@ def PairOffCluster(matches, code, cluster, type, charge_type):
 
 # Cluster is either
 # A) Neutral: no boundary elements, and sum of charges == 0 mod d
-# B) Boundary-Neutral: has a boundary element
-# C) Charged: no boundary elements, and sum of charges != 0 mod d
-# if neutral or boundary-neutral, fuse and annihilate cluster
+# B) Charged: no boundary elements, and sum of charges != 0 mod d
+# if neutral, fuse and annihilate cluster
 def fuse_cluster(code, cluster, charge_type):
     dim = code.dimension
     NetCharge = 0
-    BOUND = False
     Charged = True
 
-    ContainsExternal = False
-    ContainsInternal = False
 
     for node in cluster:
-        if node not in code.syndrome:
-            ContainsExternal = True
-        else:
-            ContainsInternal = True
-            NetCharge += code.syndrome[type][charge_type][node].charge[charge_type]
+        NetCharge += code.syndrome[type][charge_type][node].charge[charge_type]
 
     NetCharge = NetCharge%dim
 
-    if ContainsInternal and ContainsExternal or NetCharge == 0:
+    if NetCharge == 0:
         return True
     else:
         return False
@@ -407,24 +328,9 @@ def partition(code, unclustered_graph, scale, type, charge_type):
 
 
 def fuse(code, pair, type, charge_type):
-    # make sure that starting point is internal, because need ordering
-    # to determine sign of the correction charge
-    if pair[0] not in code.syndrome or pair[1] not in code.syndrome:
-        if pair[0] in code.syndrome:
-            start_node = pair[0]
-            end_node = pair[1]
-        else:
-            start_node = pair[1]
-            end_node = pair[0]
-        
-        second_to_last_node = associatedInternalMeasure(end_node)
-        partial_chain = nx.shortest_path(code.shrunk[type],start_node, second_to_last_node)
-        recovery_chain = partial_chain + [end_node]
-    else:
-        start_node = pair[0]
-        end_node = pair[1]
-        recovery_chain = nx.shortest_path(code.shrunk[type],start_node,end_node)
-        print recovery_chain
+    start_node, end_node = pair[1], pair[0]
+    recovery_chain = nx.shortest_path(code.shrunk[type],start_node,end_node)
+    print recovery_chain
     dim = code.dimension
     chain_length = len(recovery_chain) - 1
 
