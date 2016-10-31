@@ -11,359 +11,421 @@
  # (at your option) any later version.
 
 from common import *
-from error_models import *
-from math import *
-import networkx as nx
-import sys
-
-
-
-# common base class for decoding functions
-# as well as decoding based on
-# Edmunds' Blossom algorithm and
-# Hard Decision Renormalization Group Methods
-
-
 
 ############ Decode function and base decoder classes ############
 
-
-# make sure we are using the correct syndrome for each decoding
-
-## Call with Decode(code, syndrome, decoder)
-def Decode(code, syndrome, decoder):
-    decoder(code, syndrome)
+## Call with Decode(code, decoder)
+def Decode(code, decoder):
+    decoder(code)
 
 
 class decoder(object):
 
-    def __init__(self, match):
-        self.match = match()
-
-    def __call__(self, code, syndrome):
-        pairs = self.match(code, syndrome)
-        code = self.recover(code, pairs)
+    def __call__(self, code):
         return code
-
 
 class surface_decoder(decoder):
 
-    def __init__(self, match):
-        self.match = self.match()
-        self.recover = surface_recovery()
+    def __init__(self):
+        self.recover = self.algorithm()
 
     def __call__(self, code):
         for type in code.types:
             for charge_type in ['X', 'Z']:
-                syndrome = self.syndrome(code, type, charge_type)
-                pairs = self.match(code, syndrome, type, charge_type)
-        
-                code = self.recover(code, pairs, type, charge_type)
+                syndrome = code.Syndrome(type, charge_type)
+                code = self.recover(code, syndrome, type, charge_type)
 
         code = reset_measures(code)
         return code
 
-    def syndrome(self, code, type, charge_type):
-        syndrome = nx.Graph()
-        # Find all non-trivial check operators
-        for measure_position in code.stabilizers[type]:
-            measure_qubit = code.syndrome[measure_position]
-            charge = measure_qubit.charge[charge_type]
-            if charge != 0:
-                syndrome.add_node(measure_position, charge = charge)
-
-        return syndrome
-
-class MWPM_Decoder(surface_decoder):
-
-    def __init__(self):
-        self.match = self.matching()
-        self.recover = surface_recovery()
+class MWPM_decoder(surface_decoder):
 
     def __call__(self, code):
         return surface_decoder.__call__(self, code)
 
-    def matching(self):
-        return MinWeightMatch()
+    def algorithm(self):
+        return MWPM()
 
-class HDRG_Decoder(surface_decoder):
-
-    def __init__(self):
-        self.match = self.matching()
-        self.recover = surface_recovery()
+class HDRG_decoder(surface_decoder):
 
     def __call__(self, code):
         return surface_decoder.__call__(self, code)
 
-
-    def matching(self):
-        return HDRG_Match()
-
-
-# Delfosse Surface Projection decoder for color codes #
-
-class DSP(decoder):
-
-    def __init__(self, match):
-        self.match = match
-        self.recover = fill_recovery()
-
-    def __call__(self, code):
-        for charge_type in ['X', 'Z']:
-            for shrunk_type in code.types:
-                syndrome = self.syndrome(code, shrunk_type, charge_type)
-
-            pairs[shrunk_type] = self.match(code, syndrome, shrunk_type, charge_type)
-
-            code = self.recover(code, pairs, charge_type)
-
-        code = reset_measures(code)
-        return code
-
-    def syndrome(self, code, shrunk_type, charge_type):
-        syndrome = nx.Graph()
-        # Find all non-trivial check operators
-        for measure_position in code.syndrome:
-            measure_qubit = code.syndrome[measure_position]
-            if measure_qubit.type != shrunk_type:
-                charge = measure_qubit.charge[charge_type]
-                if charge != 0:
-                    syndrome.add_node(measure_position, charge = charge)
-
-        return syndrome
-
-
-
-############### Base clustering classes ################
-# Class of algorithms to break syndrome up into local clusters
-# of non-trivial stabilizers
-
-class Match(object):
-
-    def __init__(self):
-        pass
-
-
-# Min Weight Perfect Matching
-# Pairs up nodes to minimize overall weight
-# using Edmunds' Blossom algorithm
-
-class MinWeightMatch(Match):
-
-    def __init__(self):
-        pass
-
-    def __call__(self, code, syndrome, type, charge_type):
-        matches = []
-
-        for check1 in syndrome.nodes():
-            for check2 in syndrome.nodes():
-                if check1 != check2:
-                    weight = - code.distance(check1, check2, type)
-                    syndrome.add_edge(*(check1, check2), weight=weight)
-
-        temp_matching = nx.max_weight_matching(syndrome, maxcardinality=True)
-        for node in temp_matching:
-            neighbor = temp_matching[node]
-            if [neighbor,node] not in matches:
-                if node in code.dual.nodes() or neighbor in code.dual.nodes():
-                    matches.append([node, neighbor])
-
-        return matches
-
-
- # Hard Decision Renormalization Group matching
- # iteratively increase distance scale, annihilating
- # neutral clusters at each level
-
-class HDRG_Match(Match):
-
-    def __init__(self):
-        pass
-
-    def __call__(self, code, syndrome, type, charge_type):
-        matches = []
-
-        scale = 1
-        NeutralClusters = []
-        dim = code.dimension
-        # Copy Graph for modification
-        unclustered_graph = syndrome.copy()
-
-        while StillClustering(code, unclustered_graph):
-            clusters = partition(code, unclustered_graph, scale, type, charge_type)
-            for cluster in clusters:
-                if fuse_cluster(code, cluster, charge_type):
-                    matches = PairOffCluster(matches, code, cluster, type, charge_type)
-                    annihilate(unclustered_graph, cluster)
-            scale += 1
-        return matches
-        
-
-
-
-############### Base recovery classes ################
-# Class of algorithms to apply recovery chains
+    def algorithm(self):
+        return HDRG()
 
 def reset_measures(code):
-        perfect_gates = ErrorModel()
-        code = code.CodeCycle(perfect_gates, 0)
-        return code
+    for type in code.types:
+        for measure_qubit in code.Stabilizers[type]:
+            code.Stabilizers[type][measure_qubit]['charge'] = Charge()
+    return code
 
-class recovery(object):
+
+
+class matching_algorithm(object):
 
     def __init__(self):
         pass
 
-    def __call__(self, code, matches, type, charge_type):
-        code = self.correct(code, matches, type, charge_type)
-        return code
+class MWPM(matching_algorithm):
 
+    def __init__(self):
+        pass
+
+    def __call__(self, code, Syndrome, type, charge_type):
+        return MinWeightMatching(code, Syndrome, type, charge_type)
+
+class HDRG(matching_algorithm):
+
+    def __init__(self):
+        pass
+
+    def __call__(self, code, Syndrome, type, charge_type):
+        return Renormalization(code, Syndrome, type, charge_type)
+
+ ############# Minimum Weight Perfect Matching ###############
+
+# Given a network of weighted edges, finds the 
+# minimum weight perfect matching of the nodes.
+
+def MinWeightMatching(code, Syndrome, type, charge_type):
+    dim = code.dimension
+
+    # Fully connect check operators
+    for check1 in Syndrome.nodes():
+        for check2 in Syndrome.nodes():
+            if check1 != check2:
+                weight = - code.distance(type, check1, check2)
+                Syndrome.add_edge(*(check1, check2), weight=weight)
+
+    # Generate Boundary Graph
+    External_Graph = nx.Graph()
+
+    for node in Syndrome.nodes():
+        charge = Syndrome.node[node]['charge']
+        external_node = AssociatedExternal(node, code.Dual[type], code.External[type])
+        External_Graph.add_node(external_node, charge=(-charge) % dim)
+        weight = -code.distance(type, node, external_node)
+        Syndrome.add_edge(*(node, external_node), weight=weight)
+
+    # Ensure even number of elements in Syndrome
+    # so min weight matching can proceed successfully
+    if len(Syndrome.nodes()) % 2 != 0:
+        removed_external = External_Graph.nodes()[0]
+        edge = Syndrome.edges(removed_external)[0]
+        min_weight = Syndrome.get_edge_data(*edge)['weight']
+        for external_node in External_Graph.nodes():
+            edge = Syndrome.edges(external_node)[0]
+            weight = Syndrome.get_edge_data(*edge)['weight']
+            if weight < min_weight:
+                removed_external = external_node
+                min_weight = weight
+
+        External_Graph.remove_node(removed_external)
+        Syndrome.remove_node(removed_external)
+
+    # Connect External Nodes
+    for ext1 in External_Graph:
+        for ext2 in External_Graph:
+            if ext1 != ext2:
+                Syndrome.add_edge(*(ext1, ext2), weight=0)
+
+    TempMatching = nx.max_weight_matching(Syndrome, maxcardinality=True)
+
+    Matching = {}
+    # each edge appears twice in TempMatching
+    # Should only appear once in Matching
+    for node, neighbor in TempMatching.items():
+        if neighbor not in Matching:
+            if node in code.Dual[type].nodes() or neighbor in code.Dual[type].nodes():
+                Matching[node] = neighbor
+
+    code = Recovery(code, Matching, type, charge_type)
+
+    return code
     
 
 
-class surface_recovery(recovery):
+# Recovery Operations
+# Generate recovery chains to correct for errors during code cycle. 
 
-    def __init__(self):
-        pass
+def Recovery(code, Matching, type, charge_type):
+    for terminal1, terminal2 in Matching.items():
+        if terminal1 in code.Dual[type].nodes() and terminal2 in code.Dual[type].nodes():
+            code = InternalRecovery(code, terminal1, terminal2, type, charge_type)
+        else:
+            code = BoundaryRecovery(code, terminal1, terminal2, type, charge_type)
 
-    def correct(self, code, pairs, type, charge_type):
-        for pair in pairs:
-            code = fuse(code, pair, type, charge_type)
-        return code
+    return code
 
-    def __call__(self, code, pairs, type, charge_type):
-        code = recovery.__call__(self, code, pairs, type, charge_type)
-        return code
+def InternalRecovery(code, terminal1, terminal2, type, charge_type):
+    measure_chain = nx.shortest_path(code.Dual[type], terminal1, terminal2)
+    chain_length = nx.shortest_path_length(code.Dual[type], terminal1, terminal2)
+    for link in range(chain_length):
+        vertex1 = measure_chain[link]
+        vertex2 = measure_chain[link + 1]
+        for data_qubit in code.Stabilizers[type][vertex1]['data']:
+            if data_qubit in code.Stabilizers[type][vertex2]['data']:
+                prior_charge = code.Primal.node[data_qubit]['charge'][charge_type]
+                code.Primal.node[data_qubit]['charge'][charge_type] = (prior_charge + 1) % 2
+
+    return code
+
+def BoundaryRecovery(code, terminal1, terminal2, type, charge_type):
+    if terminal1 not in code.Stabilizers[type]:
+        data_near_boundary = code.External[type][terminal1]['data']
+        prior_charge = code.Primal.node[data_near_boundary]['charge'][charge_type]
+        code.Primal.node[data_near_boundary]['charge'][charge_type] = (prior_charge + 1) % 2
+
+        terminal1 = code.External[type][terminal1]['measure']
+        InternalRecovery(code, terminal1, terminal2, type, charge_type)
+    else:
+        data_near_boundary = code.External[type][terminal2]['data']
+        prior_charge = code.Primal.node[data_near_boundary]['charge'][charge_type]
+        code.Primal.node[data_near_boundary]['charge'][charge_type] = (prior_charge + 1) % 2
+        terminal2 = code.External[type][terminal2]['measure']
+        InternalRecovery(code, terminal1, terminal2, type, charge_type)
+
+    return code
+
+
+def AssociatedExternal(node, Dual, External):
+    associate = External.iterkeys().next()
+    min_dist = nx.shortest_path_length(Dual, node, External[associate]['measure']) + 1
+
+    for candidate in External:
+        distance = nx.shortest_path_length(Dual, node, External[candidate]['measure']) + 1
+        if distance < min_dist:
+            min_dist = distance
+            associate = candidate
+    return associate
 
 
 
-# Make closed loops on dual lattice and fill in the interior
-class fill_recovery(recovery):
+###################### Renormalization Decoder ######################
 
-    def __init__(self):
-        pass
 
-    def __call__(self, code, pairs, charge_type):
-        return code
+# Takes as input a fully connected graph
+# containing all non-trivial syndrome
+# measurement results from code cycle
 
-############# Functions used in matching, clustering and recovery ############
+# Iteratively increases distance
+# finding maximal disjoint clusters and
+# annihilating neutral clusters at each distance
 
-def annihilate(unclustered_graph, cluster):
+def Renormalization(code, Syndrome, type, charge_type):
+
+    dim = code.dimension
+
+    # Add in Boundary elements
+    for node in code.External[type]:
+        Syndrome.add_node(node, charge=0, external=True)
+
+
+    scale = 1
+    NeutralClusters = []
+    # Copy Graph for modification
+    UnclusteredGraph = Syndrome.copy()
+
+    while StillClustering(UnclusteredGraph):
+        clusters = Partition(UnclusteredGraph, code, type, scale)
+        for cluster in clusters:
+            NetCharge = ClusterCharge(UnclusteredGraph, cluster, dim) 
+            if NetCharge == 'Neutral':
+                NeutralClusters.append(cluster)
+                Fuse(code, UnclusteredGraph, cluster, dim, type, charge_type)
+                Annihilate(UnclusteredGraph, cluster)
+            elif NetCharge == 'BoundaryNeutral':
+                NeutralClusters.append(cluster)
+                BoundFuse(code, UnclusteredGraph, cluster, dim, type, charge_type)
+                Annihilate(UnclusteredGraph, cluster)
+        
+        scale += 1      # increase distance scale
+
+    return code
+
+
+
+def Annihilate(UnclusteredGraph,cluster):
     for node in cluster:
-        unclustered_graph.remove_node(node)
+        UnclusteredGraph.remove_node(node[0])
 
 
 # Boolean function, True if still have nodes to cluster
-def StillClustering(code, unclustered_graph):
-    for node in unclustered_graph.nodes():
-        if node in code.syndrome:
+def StillClustering(UnclusteredGraph):
+    for node in UnclusteredGraph.nodes():
+        if 'external' not in UnclusteredGraph.node[node]:
             return True
-        else:
-            return False
-
-def PairOffCluster(matches, code, cluster, type, charge_type):
-    
-    dim = code.dimension
-    unmatched_nodes = cluster
-
-    internal = []
-
-
-    for node in cluster:
-        MATCHED = False
-        if node in unmatched_nodes:
-            node_charge = code.syndrome[node].charge[charge_type]
-            for partner in cluster:
-                if partner in unmatched_nodes:
-                    partner_charge = code.syndrome[partner].charge[charge_type]
-                    if (node_charge + partner_charge)%dim == 0 and node != partner:
-                        matches[charge_type].append([node, partner])
-                        unmatched_nodes.remove(node)
-                        unmatched_nodes.remove(partner)
-                        MATCHED = True
-
-    return matches
-
+    return False
 
 
 # Cluster is either
-# A) Neutral: no boundary elements, and sum of charges == 0 mod d
-# B) Charged: no boundary elements, and sum of charges != 0 mod d
-# if neutral, fuse and annihilate cluster
-def fuse_cluster(code, cluster, charge_type):
-    dim = code.dimension
+# A) Neutral
+# B) Boundary-Neutral
+# C) Charged
+def ClusterCharge(UnclusteredGraph, cluster, dim):
     NetCharge = 0
+    BOUND = False
     Charged = True
 
-
     for node in cluster:
-        NetCharge += code.syndrome[type][charge_type][node].charge[charge_type]
+        if 'external' in node[1]:
+            BOUND = True
+            for mate in cluster:
+                if 'external' not in mate[1]:
+                    Charged = False
 
-    NetCharge = NetCharge%dim
+        NetCharge += node[1]['charge']
+    
+    if BOUND:
+        if Charged:
+            return 'Charged'
+        elif NetCharge % dim == 0:
+            # Neutral supercedes BoundaryNeutral
+            removed_nodes = []
+            for node in cluster:
+                
+                if 'external' in node[1]:
+                    removed_nodes.append(node)
+            for node in removed_nodes:
+                cluster.remove(node)
+            return 'Neutral'
+        else:
+            return 'BoundaryNeutral'
 
-    if NetCharge == 0:
-        return True
+    # No Boundary Elements
     else:
-        return False
-
+        if NetCharge % dim == 0:
+            return 'Neutral'
+        else:
+            return 'Charged'
 # partitions nodes into maximally disjoint clusters
 # for a given distance
-def partition(code, unclustered_graph, scale, type, charge_type):
+
+
+def Partition(UnclusteredGraph, code, type, scale):
     # Make edges on Unclustered graph
-    # between nodes separated by distance 'scale'
-    for node1 in unclustered_graph.nodes():
-        for node2 in unclustered_graph.nodes():
+    # between all nodes separated by distance 'scale'
+    # on Dual Lattice
+    for node1 in UnclusteredGraph.nodes():
+        for node2 in UnclusteredGraph.nodes():
             if node1 != node2:
-                distance = code.distance(node1, node2, lattice_type = type)
-                if distance <= scale:
-                    unclustered_graph.add_edge(*(node1, node2), weight=distance)
+                d = code.distance(type, node1, node2)
+                if d <= scale:
+                    UnclusteredGraph.add_edge(*(node1, node2), weight=d)
     Clusters = []
     # Networkx connected components analysis
-    subgraphs = nx.connected_component_subgraphs(unclustered_graph)
+    subgraphs = nx.connected_component_subgraphs(UnclusteredGraph)
     for i, sg in enumerate(subgraphs):
         Clusters.append(sg.nodes(data=True))
+            
 
     return Clusters
 
 
-def fuse(code, pair, type, charge_type):
-    start_node, end_node = pair[1], pair[0]
-    recovery_chain = nx.shortest_path(code.shrunk[type],start_node,end_node)
-    print recovery_chain
-    dim = code.dimension
-    chain_length = len(recovery_chain) - 1
+# Choose fixed node for cluster fusion
+def CentralNode(UnclusteredGraph, cluster):
+    # Initialize Center
+    for node in cluster:
+        if 'external' not in node[1]:
+            center = node
+            degree = UnclusteredGraph.degree(center[0])
+            break
 
-    
-    charge = code.syndrome[start_node].charge[charge_type]
+    for node in cluster:
+        if UnclusteredGraph.degree(node[0]) > degree and 'external' not in node[1]:
+            center = node
+            degree = UnclusteredGraph.degree(center[0])
+
+    return center
 
 
+def Fuse(code, UnclusteredGraph, cluster, dim, type, charge_type):
+    # use syndrome transport to move excitations around lattice
+    center = CentralNode(UnclusteredGraph, cluster)
+    for mate in cluster:
+        if mate != center:
+            Transport(code, center, mate, dim, type, charge_type)
+
+def Transport(code, fixed_node, mobile_node, dim, type, charge_type):
+
+    chain = nx.shortest_path(code.Dual[type], mobile_node[0], fixed_node[0])
+    chain_length = len(chain) - 1
+    first_link = chain[0]
+
+    charge = code.Stabilizers[type][first_link]['charge'][charge_type]
 
     for link in range(chain_length):
-        first_node, second_node = recovery_chain[link], recovery_chain[(link + 1)%(chain_length+1)]
-        for data in code.stabilizers[type][first_node].data:
-            if data in code.stabilizers[type][second_node].data:
-                if link != 0:
-                    if (previous_data, data) not in code.primal.edges():
-                        shared_data = data
-                else:
-                    shared_data = data
-
-        for count in code.stabilizers[type][first_node].order:
-            if code.stabilizers[type][first_node].order[count] == shared_data:
-                num_sides = code.types[type]['num_sides']
-                if count in range(num_sides/2):
-                    sign = -1 # Add control to target
-                else:
-                    sign = 1 # subtract control from target
-        previous_data = shared_data
-        previous_charge = code.data[shared_data].charge[charge_type]
-        code.data[shared_data].charge[charge_type] = (previous_charge + sign * charge)%dim
-    return code
+        previous, next = chain[link], chain[link + 1]
+        for shared in code.Stabilizers[type][previous]['data']:
+            if shared in code.Stabilizers[type][next]['data']:
+                num_sides = code.Stabilizers[type][next]['sides']
+                count = code.Stabilizers[type][previous]['data'][shared]
+                sign = Sign(count, num_sides)
+                delta_charge = sign * charge
+                data_charge = code.Primal.node[shared]['charge'][charge_type]
+                code.Primal.node[shared]['charge'][charge_type] = (data_charge - delta_charge)%dim
 
 
-def Assessment(code):
-    for charge_type in ['X', 'Z']:
-        if code.hasLogicalError(charge_type):
-            return False
-    return True
+
+def BoundFuse(code, UnclusteredGraph, cluster, dim, type, charge_type):
+    # Find Excess charge and give all charge to one external element
+    # then delete the other external elements
+
+    NetCharge = 0
+    for node in cluster:
+        NetCharge += node[1]['charge']
+    NetCharge = NetCharge % dim 
+
+    IsNeutral = False
+    removed_externals = []
+
+    for node in cluster:
+        if 'external' in node[1]:
+            if not IsNeutral:
+                charged_external = node
+                charged_external[1]['charge'] = - NetCharge
+                IsNeutral = True
+            else:
+                removed_externals.append(node)    
+            
+    for external in removed_externals:
+        cluster.remove(external)
+
+
+    center = CentralNode(UnclusteredGraph, cluster)
+    for mate in cluster:
+        if mate != center:
+            BoundTransport(code, center, mate, dim, type, charge_type)
+
+def BoundTransport(code, fixed_node, mobile_node, dim, type, charge_type):
+    if 'external' in mobile_node[1]:
+        charge = mobile_node[1]['charge']
+        first_link = code.External[type][mobile_node[0]]['measure']
+        shared = code.External[type][mobile_node[0]]['data']
+
+        count = code.External[type][mobile_node[0]]['order']
+        num_sides = code.External[type][mobile_node[0]]['sides']
+        sign = Sign(count, num_sides)
+        delta_charge = sign * charge
+        first_link_charge = code.Primal.node[shared]['charge'][charge_type]
+        code.Primal.node[shared]['charge'][charge_type] = (first_link_charge - delta_charge)%dim
+        
+        mobile_node = first_link
+        chain = nx.shortest_path(code.Dual[type], mobile_node, fixed_node[0])
+        chain_length = len(chain) - 1
+        for link in range(chain_length):
+            previous, next = chain[link], chain[link + 1]
+            for shared in code.Stabilizers[type][previous]['data']:
+                if shared in code.Stabilizers[type][next]['data']:
+
+                    num_sides = code.Stabilizers[type][previous]['sides']
+                    count = code.Stabilizers[type][previous]['data'][shared]
+                    sign = Sign(count, num_sides)
+                    delta_charge = sign * charge
+                    data_charge = code.Primal.node[shared]['charge'][charge_type]
+                    code.Primal.node[shared]['charge'][charge_type] = (data_charge - delta_charge)%dim
+
+    else:
+        Transport(code, fixed_node, mobile_node, dim, type, charge_type)
+

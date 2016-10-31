@@ -9,118 +9,103 @@
  # it under the terms of the GNU General Public License as published by
  # the Free Software Foundation, either version 3 of the License, or
  # (at your option) any later version.
- 
+
+import sys
 import networkx as nx
-from random import random, randint
-from math import *
+import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import *
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+
+#################### Base Classes #####################
 
 def Charge(X_charge = 0, Z_charge = 0):
-	return {'X':X_charge,'Z':Z_charge}
+    return {'X':X_charge,'Z':Z_charge}
 
 class Qubit:
-	def __init__(self, position, charge = False, type = 'data'):
-		self.position = position
-		self.type = type
-		if charge == False:
-			self.charge = Charge()
-		else:
-			self.charge = charge
-		
+    def __init__(self, position, charge = False, type = 'data'):
+        self.position = position
+        self.type = type
+        if charge == False:
+            self.charge = Charge()
+        else:
+            self.charge = charge
 
-class Stabilizer:
-	def __init__(self, type, data, order = False):
-		self.data = data
-		self.type = type
-		if order == False:
-			self.order = Order(data)
-		else:
-			self.order = order
+def Sign(count, num_sides):
+    if count in range(num_sides/2):
+        sign = 1 # Add control to target
+    else:
+        sign = -1 # subtract control from target
+    return sign
 
-def Order(data_list):
-	count, order = 0, {}
-	for data_position in data_list:
-		order[count] = data_position
-		count += 1
-	return order
+
+class Dual:
+
+    def __init__(self):
+        self = nx.Graph()
+
 
 class Code:
-	'Common base class for all types of topological codes'
+    'Common base class for all topological codes'
 
-	def __init__(self, depth, dimension = 2):
-		self.depth = depth
-		self.dimension = dimension
-		self.data = {}
-		self.syndrome = {}
-		self.memberships = {}
-		self.generateProperties()
-		self.generateStabilizers()
-		self.generatePrimal()
-		self.generateDual()
-
-	def generateStabilizerTypes(self):
-		self.stabilizers = {}
-		for type in self.types:
-			self.stabilizers[type] = {}
-
-	def generateProperties(self):
-		self.generateTypes()
-		self.generateColors()
-		self.generateStabilizerTypes()
-
-	def generateStabilizerData(self, measure_position, scale, num_sides, angle = 0):
-		data = []
-		for k in range(num_sides):
-			x = scale * float(cos(2*pi*k/num_sides))
-			y = scale * float(sin(2*pi*k/num_sides))
-			if angle != 0:
-				x_prime = float(cos(angle))*x - float(sin(angle))*y
-				y_prime = float(sin(angle))*x + float(cos(angle))*y
-				x, y = x_prime, y_prime
-			position = (round(x + measure_position[0], 3) ,round(y  + measure_position[1], 3))
-			data.append(position)
-		return data
-
-	def generatePrimalEdges(self, stabilizer):
-		stabilizer_type = stabilizer.type
-		num_sides = self.types[stabilizer_type]['num_sides']
-		for k in range(num_sides):
-			if k in stabilizer.order:
-				vertex1 = stabilizer.order[k]
-				while (k+1)%num_sides not in stabilizer.order:
-					k += 1
-				vertex2 = stabilizer.order[(k+1)%num_sides]
-				self.primal.add_edge(*(vertex1,vertex2), color = 'black')
+    def __init__(self, depth, dimension = 2):
+        self.depth = depth
+        self.dimension = dimension
+        self.Primal = nx.Graph()
+        self.Dual, self.Stabilizers = {}, {}
+        self.Boundary, self.External = {}, {}
+        self.generateColors()
+        self.generateCode()
 
 
-	def generatePrimal(self):
-		self.primal = nx.Graph()
-		for type in self.types:
-			for measure_position in self.stabilizers[type]:
-				stabilizer = self.stabilizers[type][measure_position]
-				for count in stabilizer.order:
-					data_position = stabilizer.order[count]
-					
-					if data_position not in self.memberships:
-						self.memberships[data_position] = {}
-					
-					if type not in self.memberships[data_position]:
-						self.memberships[data_position][type] = []
-					
-					self.memberships[data_position][type].append(measure_position)
-					if data_position not in self.primal.nodes():
-						self.primal.add_node(data_position)	
-						self.data[data_position] = Qubit(data_position, Charge(), type = 'data')
-						
-				self.generatePrimalEdges(stabilizer)
+    ##### Syndrome Generation #####
+    # Creates a Syndrome Graph given non-trivial
+    # check-operator measurement results
+
+    def Syndrome(self, type, charge_type):
+        Syndrome = nx.Graph()
+        # Find all non-trivial check operators
+        for measure_qubit in self.Stabilizers[type]:
+            charge = self.Stabilizers[type][measure_qubit]['charge'][charge_type]
+            if charge != 0:
+                Syndrome.add_node(measure_qubit, charge=charge)
+        return Syndrome
+
+    def PhysicalErrors(self):
+        PhysicalError = False
+        for type in self.types:
+            for measure_qubit in self.Stabilizers[type]:
+                for charge_type in ['X','Z']:
+                    if self.Stabilizers[type][measure_qubit]['charge'][charge_type]!= 0:
+                        PhysicalError = True
+                
+        return PhysicalError
+
+    ### distance Metric ###
+
+    def distance(self, type, node1, node2):
+        if node1 in self.Dual[type].nodes() and node2 in self.Dual[type].nodes():
+            return nx.shortest_path_length(self.Dual[type], node1, node2)
+        elif node1 in self.Dual[type].nodes() and node2 not in self.Dual[type].nodes():
+            node2 = self.External[type][node2]['measure']
+            return nx.shortest_path_length(self.Dual[type], node1, node2) + 1
+        elif node1 not in self.Dual[type].nodes() and node2 in self.Dual[type].nodes():
+            node1 = self.External[type][node1]['measure']
+            return nx.shortest_path_length(self.Dual[type], node1, node2) + 1
+        else:
+            node1 = self.External[type][node1]['measure']
+            node2 = self.External[type][node2]['measure']
+            return nx.shortest_path_length(self.Dual[type], node1, node2) + 2
+
+    # Re-initializes Measurement qubits
+    def Assessment(self):
+        if self.hasLogicalError():
+            return False
+        else:
+            return True
 
 
-	def distance(self, qubit1, qubit2, lattice_type = 'dual'):
-		if lattice_type == 'dual':
-			lattice = self.dual.copy()
-		else:
-			lattice = self.shrunk[lattice_type].copy()
-			
-		return nx.shortest_path_length(lattice, qubit1, qubit2)
+
+
+
+
+
+

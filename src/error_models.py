@@ -14,37 +14,38 @@ from random import random, randint
 from math import *
 from common import *
 
+
 # Triple [X,Y,Z] of Pauli Error Rates for each gate
 # Fourier generalizes Hadamard to qudits
 # SUM generalizes CNOT to qudits
 
-def pauli_X(qubit, dim):
-	qubit.charge['X'] = (qubit.charge['X'] + randint(1,dim - 1))%dim
-	return qubit
+def pauli_X(charge, dim):
+	charge['X'] = (charge['X'] + randint(1,dim - 1))%dim
+	return charge
 
-def pauli_Z(qubit, dim):
-	qubit.charge['Z'] = (qubit.charge['Z'] + randint(1,dim - 1))%dim
-	return qubit 
+def pauli_Z(charge, dim):
+	charge['Z'] = (charge['Z'] + randint(1,dim - 1))%dim
+	return charge 
 
-def pauli_Y(qubit, dim):
-	qubit.charge['X'] = (qubit.charge['X'] + randint(1,dim - 1))%dim
-	qubit.charge['Z'] = (qubit.charge['Z'] + randint(1,dim - 1))%dim
-	return qubit
+def pauli_Y(charge, dim):
+	charge['X'] = (charge['X'] + randint(1,dim - 1))%dim
+	charge['Z'] = (charge['Z'] + randint(1,dim - 1))%dim
+	return charge
 
 
 
 # bit flip and phase flip channel
-def BP_Channel(qubit, dim, error_rates):
+def BP_Channel(charge, dim, error_rates):
 	p_error = sum(error_rates)
 	if random() < p_error:
 		err_type = random()
 		if err_type < float(error_rates[0])/p_error:
-			qubit = pauli_X(qubit, dim)
+			charge = pauli_X(charge, dim)
 		elif err_type > float(error_rates[0] + error_rates[1])/p_error:
-			qubit = pauli_Y(qubit, dim)
+			charge = pauli_Y(charge, dim)
 		else:
-			qubit = pauli_Z(qubit, dim)
-	return qubit
+			charge = pauli_Z(charge, dim)
+	return charge
 
 # Function handle: for perfect gates, also performs gate with 0 errors
 PerfectGate = lambda p: [0,0,0]
@@ -68,55 +69,47 @@ class ErrorModel:
 			setattr(self, prop, kwargs.get(prop, default))
 
 	def Initialize(self, code, type, p):
-		dimension = code.dimension
-		for measure_position in code.stabilizers[type]:
-			code.syndrome[measure_position].charge = Charge()
-			measure_qubit = code.syndrome[measure_position]
-			code.syndrome[measure_position] = BP_Channel(measure_qubit, dimension, self.initialize(p))
+		dim = code.dimension
+		for measure_qubit in code.Stabilizers[type]:
+			charge = code.Stabilizers[type][measure_qubit]['charge']
+			code.Stabilizers[type][measure_qubit]['charge'] = BP_Channel(charge, dim, self.initialize(p))
 		return code
 
 	def Identity(self, code, p):
-		dimension = code.dimension
-		for data_position in code.data:
-			data_qubit = code.data[data_position]
-			code.data[data_position] = BP_Channel(data_qubit, dimension, self.identity(p))
+		dim = code.dimension
+		for qubit in code.Primal.nodes():
+			charge = code.Primal.node[qubit]['charge']
+			code.Primal.node[qubit]['charge'] = BP_Channel(charge, dim, self.identity(p))
 		return code
 
 	def Fourier(self, code, type, p):
-		dimension = code.dimension
-		for measure_position in code.stabilizers[type]:
-			measure_qubit = code.syndrome[measure_position]
-			code.syndrome[measure_position] = BP_Channel(measure_qubit, dimension, self.fourier(p))
+		dim = code.dimension
+		for measure_qubit in code.Stabilizers[type]:
+			charge = code.Stabilizers[type][measure_qubit]['charge']
+			code.Stabilizers[type][measure_qubit]['charge'] = BP_Channel(charge, dim, self.initialize(p))
 		return code
 
 	def Measure(self, code, type, p):
-		dimension = code.dimension
-		for measure_position in code.stabilizers[type]:
-			measure_qubit = code.syndrome[measure_position]
-			code.syndrome[measure_position] = BP_Channel(measure_qubit, dimension, self.measure(p))
+		dim = code.dimension
+		for measure_qubit in code.Stabilizers[type]:
+			charge = code.Stabilizers[type][measure_qubit]['charge']
+			code.Stabilizers[type][measure_qubit]['charge'] = BP_Channel(charge, dim, self.measure(p))
 		return code
 
-	def Sum(self, code, count, type, charge_type, p):
-		num_sides = code.types[type]['num_sides']
-		if count in range(num_sides/2):
-			sign = 1 # Add control to target
-		else:
-			sign = -1 # subtract control from target
+	def Sum(self, code, count, num_sides, type, charge_type, p):
+		dim = code.dimension
 
-		dimension = code.dimension
+		sign = Sign(count, num_sides)
 
-		for target_position in code.stabilizers[type]:
-			stabilizer = code.stabilizers[type][target_position]
-			target_qubit = code.syndrome[target_position]
-			if count in stabilizer.order:
-				control_position = stabilizer.order[count]
-				control_qubit = code.data[control_position]
-				control_charge = control_qubit.charge[charge_type]
-				target_charge = target_qubit.charge[charge_type]
 
-				code.syndrome[target_position].charge[charge_type] = (target_charge + sign * control_charge)%dimension
-				code.data[control_position] = BP_Channel(control_qubit, dimension, self.sum['control'](p))
-			code.syndrome[target_position] = BP_Channel(target_qubit, dimension, self.sum['target'](p))
+		for measure_qubit in code.Stabilizers[type]:
+			measure_charge = code.Stabilizers[type][measure_qubit]['charge']
+			if count in code.Stabilizers[type][measure_qubit]['order']:
+				data_qubit = code.Stabilizers[type][measure_qubit]['order'][count]
+				data_charge = code.Primal.node[data_qubit]['charge']
+				code.Stabilizers[type][measure_qubit]['charge'][charge_type] = (measure_charge[charge_type] + sign * data_charge[charge_type])%dim
+				code.Primal.node[data_qubit]['charge'] = BP_Channel(data_charge, dim, self.sum['control'](p))
+			code.Stabilizers[type][measure_qubit]['charge'] = BP_Channel(measure_charge, dim, self.sum['target'](p))
 		return code
 
 

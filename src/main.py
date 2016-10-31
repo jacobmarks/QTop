@@ -10,38 +10,28 @@
  # the Free Software Foundation, either version 3 of the License, or
  # (at your option) any later version.
 
-
+import sys
+sys.path.insert(0, 'Decoders/')
 from common import *
+from surface_codes import *
 from error_models import *
-from kitaev import *
 from decoders import *
-import numpy as np
+from visualization import *
+from threshold import *
 from simulation import *
-from geometry import *
-
-def probs():
-  return lambda p: [float(p), 0, float(p)/2]
-
-errors = probs()
-
-def main():
-	code = KTC(11,3)
-	model = ErrorModel(initialize = errors)
-
-	# model = CodeCapacity()
-	code = code.CodeCycle(model,.1)
-	# matching = MinWeightMatch()
-	# decoder = MWPM_Decoder()
-	code.plot_primal(1, 'Kitaev Toric Code')
-	# code = decoder(code)
-	# code.plot_primal(2, 'Primal')
-	# code.plot_dual('Z', 3, 'Dual')
-	# code.plot_shrunk('Z', 4, 'Shrunk')
-	# print Assessment(code)
-	plt.show()
 
 
-if __name__ == '__main__':
-	main()
+
+################## Surface Code Simulation ##################
+
+L = 8
+d = 2
+p = .1
+model = CodeCapacity()
+decoder = HDRG_decoder()
+sim = simulation(2, model, decoder)
+
+sim(L,p)
+# run(sim, L_array, p_array, num_trials)
 
 
