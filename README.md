@@ -34,14 +34,8 @@ along with QTop.  If not, see <http://www.gnu.org/licenses/>.
 # Brief Tutorial
 
 ## Basics
-QTop's base classes, including `qudit`, `Stabilizer`, and `Code`, are all included in the 'common' module. In this first installment of the tutorial, you will be introduced to these classes and their methods. By the end, you will be able to create instances of topological quantum error correcting codes.
+QTop's base classes are `Code`, `ErrorModel`, and `decoder`. The methods of `Code` are included in the 'common' module. In this first installment of the tutorial, you will learn how to create instances of topological quantum error correcting codes.
 
-The simplest object one can work with in QTop is a qudit. A qudit is defined by its position, charge and type. By default, a qudit has trivial X and Z charges, and is of the type `'data'`. To instantiate a measure-X qudit with X charge 1 and Z charge 0 at position (5,2), type the command
-
-```python
-position = (5,2)
-qudit = Qudit(position, charge = {'X':1, 'Z':0}, type = 'X')
-```
 
 A stabilizer is stored in the code by the position of its central measurement qudit, and contains information about the positions of the surrounding data qudits, as well as the order in which they must be measured during the error correction code cycle. In addition, the stabilizer has measurement type of the central qudit. 
 
