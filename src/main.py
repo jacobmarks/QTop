@@ -10,6 +10,7 @@
  # the Free Software Foundation, either version 3 of the License, or
  # (at your option) any later version.
 
+
 import sys
 sys.path.insert(0, 'Decoders/')
 from common import *
@@ -20,18 +21,16 @@ from visualization import *
 from threshold import *
 from simulation import *
 
-
-
 ################## Surface Code Simulation ##################
 
-L = 8
-d = 2
-p = .1
+
 model = CodeCapacity()
 decoder = HDRG_decoder()
 sim = simulation(2, model, decoder)
+L_vals = [3,5,9]
+p_vals = np.linspace(.12,.16,20)
+num_trials = 20000
+run(sim, L_vals, p_vals, num_trials)
 
-sim(L,p)
+# sim(L,p)
 # run(sim, L_array, p_array, num_trials)
-
-

@@ -32,29 +32,45 @@ class simulation:
 		code = SurfaceCode(L, self.dimension)
 		code = code.CodeCycle(self.model, p)
 		Decode(code, self.decoder)
-		print code.Assessment()
 		return code.Assessment()
 
 
-# def run(simulation, L_array, p_array, num_trials):
+def run(sim, L_vals, p_vals, num_trials):
+	L_array, p_phys_array, p_error_array = [], [], []
+	for L in L_vals:
+		pL_error_vals = []
+		for p in p_vals:
+			L_array.append(L)
+			p_phys_array.append(p)
 
-# 	data = {'values':{}, 'L':L_array, 'p':p_array}
 
-# 	for L in L_array:
-# 		data['values'][L] = {}
-# 		for p in p_array:
-# 			successes = 0
+			errors = 0
 
-# 			for i in range(num_trials):
-# 				print 'L:', L, 'p:', p, 'trial:', i
-# 				if simulation(L, p):
-# 					successes += 1
-# 			data['values'][L][p] = float(successes)/num_trials
+			for t in range(num_trials):
+				print 'L', L, 'p', p, 'trial ', t+1, '/', num_trials
+				if not sim(L,p):
+					errors += 1
+			p_error = float(errors)/num_trials
+			pL_error_vals.append(p_error)
 
-# 	fitting = scaling(num_trials, data)
-# 	threshold = fitting.get_threshold()
-# 	print threshold
-# 	# fitting()
+		p_error_array += pL_error_vals
+		plt.plot(p_vals, pL_error_vals, label=str(L))
+
+
+	p_success_array = [1 - p for p in p_error_array]
+
+	X = [p_phys_array,L_array]
+	params, _ = curve_fit(form, X, p_success_array, maxfev=int(10e7))
+	threshold = params[1]
+	print threshold
+	title = "threshold = " + str(threshold)
+	plt.title(str(title))
+	plt.xlabel("Physical Error Rate")
+	plt.ylabel("Logical Error Rate")
+	plt.legend(loc='upper left')
+	plt.savefig('test2.png')
+	plt.show()
+
 
 
 

@@ -20,28 +20,12 @@ import matplotlib.pyplot as plt
 def Charge(X_charge = 0, Z_charge = 0):
     return {'X':X_charge,'Z':Z_charge}
 
-class Qubit:
-    def __init__(self, position, charge = False, type = 'data'):
-        self.position = position
-        self.type = type
-        if charge == False:
-            self.charge = Charge()
-        else:
-            self.charge = charge
-
 def Sign(count, num_sides):
     if count in range(num_sides/2):
         sign = 1 # Add control to target
     else:
         sign = -1 # subtract control from target
     return sign
-
-
-class Dual:
-
-    def __init__(self):
-        self = nx.Graph()
-
 
 class Code:
     'Common base class for all topological codes'
@@ -54,6 +38,7 @@ class Code:
         self.Boundary, self.External = {}, {}
         self.generateColors()
         self.generateCode()
+        self.generateDual()
 
 
     ##### Syndrome Generation #####
