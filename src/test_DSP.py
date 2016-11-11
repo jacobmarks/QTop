@@ -10,25 +10,27 @@
  # the Free Software Foundation, either version 3 of the License, or
  # (at your option) any later version.
 
-
-import sys
-sys.path.insert(0, 'Decoders/')
-from common import *
+from math import *
+import networkx as nx
+import matplotlib.pyplot as plt
 from surface_codes import *
+from color_codes import *
 from error_models import *
 from decoders import *
 from visualization import *
-from threshold import *
-from simulation import *
-
-################## Surface Code Simulation ##################
 
 
+##################   Testing ##################
+
+
+L, d, p = 13, 2, .005
+
+code = Color_6_6_6(L,d)
 model = CodeCapacity()
-decoder = HDRG_decoder()
-sim = simulation(2, model, decoder)
-L_vals = [3,5]
-p_vals = np.linspace(.12,.16,20)
-num_trials = 100
-run(sim, L_vals, p_vals, num_trials)
+code = code.CodeCycle(model, p)
+PlotPlaquette(code, "Before Decoding", 1)
 
+decoder = DSP_decoder()
+code = decoder(code)
+PlotPlaquette(code, "After Decoding", 2)
+plt.show()

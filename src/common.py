@@ -10,12 +10,22 @@
  # the Free Software Foundation, either version 3 of the License, or
  # (at your option) any later version.
 
-import sys
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
 
 #################### Base Classes #####################
+
+def removekey(d, key):
+    r = dict(d)
+    del r[key]
+    return r
+
+def manhattan_dist(A,B):
+    return abs(A[0]-B[0]) + abs(A[1]-B[1])
+
+def euclidean_dist(A,B):
+    return round(pow(abs(A[0]-B[0]),2) + pow(abs(A[1]-B[1]),2),3)
 
 def Charge(X_charge = 0, Z_charge = 0):
     return {'X':X_charge,'Z':Z_charge}
@@ -79,6 +89,7 @@ class Code:
             node1 = self.External[type][node1]['measure']
             node2 = self.External[type][node2]['measure']
             return nx.shortest_path_length(self.Dual[type], node1, node2) + 2
+
 
     # Re-initializes Measurement qubits
     def Assessment(self):

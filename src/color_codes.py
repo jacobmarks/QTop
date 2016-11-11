@@ -1,4 +1,5 @@
-#
+from common import *
+ #
  # QTop
  #
  # Copyright (c) 2016 Jacob Marks (jacob.marks@yale.edu)
@@ -9,18 +10,15 @@
  # it under the terms of the GNU General Public License as published by
  # the Free Software Foundation, either version 3 of the License, or
  # (at your option) any later version.
- 
+
 from math import *
 import networkx as nx
 import matplotlib.pyplot as plt
-
-from common import *
+from surface_codes import *
 from error_models import *
+from decoders import *
+from visualization import *
 
-# color codes proposed by Bombin and Delgado
-
-# Including all 3 3-regular tilings of the plane
-# 6-6-6, 4-8-8, and 4-6-12
 
 class ColorCode(Code):
 	'Common base class for all types of color codes'
@@ -28,9 +26,6 @@ class ColorCode(Code):
 	def __init__(self, depth, dimension = 2):
 		self.code = 'color'
 		Code.__init__(self, depth, dimension)
-
-
-
 
 	def generateColors(self):
 		self.colors = {'red':'red', 'blue':'blue', 'green':'green', 'data':'black'}
@@ -41,74 +36,176 @@ class ColorCode(Code):
 				complement = type
 		return complement
 
-	def generateCode(self):
-		self.types = {'red', 'blue', 'green'}
+	def Plaquette(self, measure_qubit, type):
+		checks = {}
 
-		for type in self.types:
-            self.Dual[type] = nx.Graph()
-            self.Stabilizers[type] = {}
-            self.Boundary[type] = {}
-            self.External[type] = {}
+		sides = self.types[type]['sides']
+		angle = self.types[type]['angle']
+		scale = self.types[type]['scale']
+
+		for k in range(sides):
+			x = scale * float(cos(2*pi*k/sides))
+			y = scale * float(sin(2*pi*k/sides))
+			if angle != 0:
+				x_prime = float(cos(angle))*x - float(sin(angle))*y
+				y_prime = float(sin(angle))*x + float(cos(angle))*y
+				x, y = x_prime, y_prime
+			data_qubit = (round(x + measure_qubit[0], 3) ,round(y  + measure_qubit[1], 3))
+			checks[data_qubit] = k
+		return checks
 
 	def generateDual(self):
-		self.dual = nx.Graph()
-		self.shrunk = {}
-		for type in self.types:
-			self.shrunk[type] = nx.Graph()
 
 		for type1 in self.Stabilizers:
-			for measure1_position in self.Stabilizers[type1]:
-				Stabilizer1 = self.Stabilizers[type1][measure1_position]
-				measure1_qubit = self.syndromes[measure1_position]
-
-				for count in Stabilizer1.order:
-					data = Stabilizer1.order[count]
-					for type2 in self.memberships[data]:
+			for m1 in self.Stabilizers[type1]:
+				for count in self.Stabilizers[type1][m1]['order']:
+					data = self.Stabilizers[type1][m1]['order'][count]
+					for type2 in self.Primal.node[data]['measures']:
 						if type2 != type1:
-							for measure2_position in self.memberships[data][type2]:
-								Stabilizer2 = self.Stabilizers[type2][measure2_position]
-								measure2_qubit = self.syndromes[measure2_position]
+							for m2 in self.Primal.node[data]['measures'][type2]:
 								edge_type = self.complementaryType([type1, type2])
-								self.shrunk[edge_type].add_edge(*(measure1_position, measure2_position), type = edge_type)
-								self.dual.add_edge(*(measure1_position, measure2_position), type = edge_type)
+								self.Dual[edge_type].add_edge(*(m1, m2), type = edge_type)
+
+	######## Code Cycle #######
+
+	def CodeCycle(self, model, p):
+
+	# length of code cycle is 2*(max number of sides + 2)
+	# 'X' and 'Z' checks each require one step for initialization,
+	# one step for each data qubit check operation, and a final measurement
+		max_num_sides = 0
+		for type in self.types:
+			if self.types[type]['sides'] > max_num_sides:
+				max_num_sides = self.types[type]['sides']
+
+		for charge_type in ['X','Z']:
+
+			# Initialization
+			for type in self.types:
+				self = model.Initialize(self, type, p)
+			for type in self.types:
+				self = model.Identity(self, p)
+
+			# Stabilizer Check Operations
+			for count in range(max_num_sides):
+				for type in self.types:
+					sides = self.types[type]['sides']
+					self = model.Sum(self, count, sides, type, charge_type, p)
+
+			# Measurement
+			for type in self.types:
+				self = model.Measure(self, type, p)
+
+		return self
+
+	def generatePrimalEdges(self):
+		for type in self.types:
+			num_sides = self.types[type]['sides']
+			for m in self.Stabilizers[type]:
+				stabilizer = self.Stabilizers[type][m]
+				for k in range(num_sides):
+					if k in stabilizer['order']:
+						vertex1 = stabilizer['order'][k]
+						while (k+1)%num_sides not in stabilizer['order']:
+							k += 1
+						vertex2 = stabilizer['order'][(k+1)%num_sides]
+						self.Primal.add_edge(*(vertex1,vertex2), color = 'black')
+
+	def PrimalBound(self, count, type, measures):
+		dict1 = self.Stabilizers[type][measures[type]]['order']
+		dict2 = self.Stabilizers[type][measures[type]]['data']
+		if count in dict1:
+			node = dict1[count]
+			self.Stabilizers[type][measures[type]]['data'] = removekey(dict2, node)
+			self.Stabilizers[type][measures[type]]['order'] = removekey(dict1, count)
+			self.Primal.remove_node(node)
+		return self 
 
 
-	######## Code Cycles #######
 
-	# default code cycle is 1-qubit code cycle
-	# but many other possible code cycles are allowed
-	# including interleaved cycles
+#############   6 - 6 - 6 Color Codes #############
+
+class Color_6_6_6(ColorCode):
+
+	def __init__(self, depth, dimension = 2):
+		self.code = '6_6_6'
+		ColorCode.__init__(self, depth, dimension)
+
+	def generateCode(self):
+		self.types = {}
+		self.types['red'] = {'sides':6,'scale':1, 'angle':0}
+		self.types['blue'] = {'sides':6,'scale':1, 'angle':0}
+		self.types['green'] = {'sides':6,'scale':1, 'angle':0}
+		depth = self.depth
+
+		for type in self.types:
+			self.Dual[type] = nx.Graph()
+			self.Stabilizers[type] = {}
+			self.Boundary[type] = {}
+			self.External[type] = []
+
+		N = int(float(depth)/2)
+		for i in range(N + 1):
+			for j in range(N + 1 - i):
+				mG = (round(3 * (i + float(j)/2), 3), round(float(3* sqrt(3) * j)/2, 3))
+				mB = (round(mG[0] + float(3)/2, 3), round(mG[1] + float(sqrt(3))/2, 3))
+				mR = (round(mG[0], 3), round(float(mG[1] + sqrt(3)), 3))
+				measures = {'red':mR, 'blue':mB, 'green':mG}
+
+				for m in measures:
 
 
-	# def OneQubitCodeCycle(self, model, p):
+					if j == 0:
+						if m != 'red' or i == 0:
+							continue
+						self.External['blue'].append(measures[m])
+						self.External['green'].append(measures[m])
+						continue
+					if j == N - i:
+						if m == 'blue':
+							self.External['red'].append(measures[m])
+							self.External['green'].append(measures[m])
+							continue
 
-	# 	# length of code cycle is 2*(max number of sides + 2)
-	# 	# 'X' and 'Z' checks each require one step for initialization,
-	# 	# one step for each data qubit check operation, and a final measurement
+					if i == 0:
+						if m == 'red':
+							continue
+						if m == 'green':
+							if j == 0:
+								continue
+							
+							self.External['red'].append(measures[m])
+							self.External['blue'].append(measures[m])
+							continue
 
-	# 	max_num_sides = 0
-	# 	for type in self.types:
-	# 		if self.types[type]['num_sides'] > max_num_sides:
-	# 			max_num_sides = self.types[type]['num_sides']
+					self.Stabilizers[m][measures[m]] = {'data': {}, 'charge': Charge(), 'order':{}, 'sides':6}
+					P = self.Plaquette(measures[m], m)
+					for data in P:
+						count = P[data]
+						self.Stabilizers[m][measures[m]]['order'][count] = data
+						self.Stabilizers[m][measures[m]]['data'][data] = count
+						if data not in self.Primal.nodes():
+							self.Primal.add_node(data, charge = Charge())
+							self.Primal.node[data]['measures'] = {'red':[], 'blue':[], 'green':[]}
+						self.Primal.node[data]['measures'][m].append(measures[m])
 
-	# 	for charge_type in ['X','Z']:
+					if (j == 1 and m == 'green'):
+						for count in [4,5]:
+							self = self.PrimalBound(count, m, measures)
+					if i == 0 and m == 'blue':
+						for count in [2,3]:
+							self = self.PrimalBound(count, m, measures)
+					if m == 'red' and i == N - j:
+						for count in [0,1]:
+							self = self.PrimalBound(count, m, measures)
 
-	# 		# Initialization
-	# 		for type in self.Stabilizers:
-	# 			self = model.Initialize(self, type, p)
-	# 		for type in self.Stabilizers:
-	# 			self = model.Identity(self, p)
 
-	# 		# Stabilizer Check Operations
-	# 		for order in range(max_num_sides):
-	# 			for type in self.types:
-	# 				self = model.Sum(self, order, type, charge_type, p)
+		self.generatePrimalEdges()
 
-	# 		# Measurement
-	# 		for type in self.types:
-	# 			self = model.Measure(self, type, p)
 
-	# 	return self
+
+#############   4 - 8 - 8 Color Codes #############
+
 
 
 class Color_4_8_8(ColorCode):
@@ -117,223 +214,89 @@ class Color_4_8_8(ColorCode):
 		self.code = '4_8_8'
 		ColorCode.__init__(self, depth, dimension)
 
-	def generateTypes(self):
+	def generateCode(self):
 		self.types = {}
-		self.types['red'] = {'num_sides':4, 'scale':float(1)/sqrt(2)}
-		self.types['blue'] = {'num_sides':8, 'scale':float(1)/(2*sin(float(pi)/8))}
-		self.types['green'] = {'num_sides':8,'scale':float(1)/(2*sin(float(pi)/8))}
-						
-
-class Triangular_4_8_8(Color_4_8_8):
-
-	def __init__(self, depth, dimension = 2):
-		Color_4_8_8.__init__(self, depth, dimension)
-
-
-	def generateStabilizers(self):
-		for type in self.types:
-			self.External[type] = {}
-			self.boundary_syndromes[type] = {}
-			self.boundary_data[type] = []
-
+		self.types['red'] = {'sides':4, 'scale':float(1)/sqrt(2), 'angle':0}
+		self.types['blue'] = {'sides':8, 'scale':float(1)/(2*sin(float(pi)/8)), 'angle':float(pi)/8}
+		self.types['green'] = {'sides':8,'scale':float(1)/(2*sin(float(pi)/8)), 'angle':float(pi)/8}
 		depth = self.depth
+
+		for type in self.types:
+			self.Dual[type] = nx.Graph()
+			self.Stabilizers[type] = {}
+			self.Boundary[type] = {}
+			self.External[type] = []
+
 		N = int(float(depth -1)/2)
-		x_dist = round(2 * (float(1)/2 + float(1)/sqrt(2)), 3)
+		x = 1 + sqrt(2)
 
 		for j in range(N + 1):
 			for i in range(N + 1 - j):
-				plaquettes = []
-				green_position = ( round(x_dist * ( 2 * i + j), 3), round(x_dist * j,3))
-				plaquettes.append({'type':'green','angle':float(pi)/8,'position':green_position})
-				plaquettes.append({'type':'blue','angle':float(pi)/8,'position':(round(green_position[0] + x_dist, 3), round(green_position[1], 3))})
-				plaquettes.append({'type':'red','angle':0,'position':( round(green_position[0] - float(x_dist)/2, 3), round(green_position[1] + float(x_dist)/2, 3))})
-				plaquettes.append({'type':'red','angle':0,'position':(round(green_position[0] + float(x_dist)/2, 3), round(green_position[1] + float(x_dist)/2, 3))})
-				for measure_qubit in plaquettes:
-					type, angle, position = measure_qubit['type'], measure_qubit['angle'], measure_qubit['position']
-					self.syndromes[position] = Qubit(position, charge = Charge(), type = type)
-					num_sides, scale = self.types[type]['num_sides'], self.types[type]['scale']
-					
+				mG = (round(x * ( 2 * i + j), 3), round(x * j,3))
+				mB = (round(mG[0] + x, 3), mG[1])
+				mR1 = (round(mG[0] - float(x)/2, 3), round(float(mG[1] + float(x)/2), 3))
+				mR2 = (round(mG[0] + float(x)/2, 3), round(float(mG[1] + float(x)/2), 3))
+				measures = {'red1':mR1, 'red2':mR2, 'blue':mB, 'green':mG}
+
+				for m in measures:
 					if i == 0:
-						if type == 'red':
+						if m == 'red1' or m == 'red2':
 							continue
 						elif type == 'green':
 							if j == 0:
 								continue
-							red_partners = [( round(position[0] + float(x_dist)/2, 3), round(position[1] + float(x_dist)/2, 3))]
-							blue_partners = []
-							blue_partners.append(( round(position[0] + x_dist, 3), round(position[1], 3)))
-							blue_partners.append(( round(position[0], 3), round(position[1] + x_dist, 3)))
-							self.External['green'][position] = {'red':red_partners, 'blue':blue_partners}
+							self.External['red'].append(mG)
+							self.External['blue'].append(mG)
 							continue
 
 					if i == N - j:
-						if type == 'red' and position == (round(green_position[0] + float(x_dist)/2, 3), round(green_position[1] + float(x_dist)/2, 3)):
+						if m == 'red2':
 							 continue
-						if type == 'blue' and j != 0:
-							red_partners = [( round(position[0] - float(x_dist)/2, 3), round(position[1] - float(x_dist)/2, 3))]
-							green_partners = []
-							green_partners.append(( round(position[0] - x_dist, 3), round(position[1], 3)))
-							green_partners.append(( round(position[0], 3), round(position[1] - x_dist, 3)))
-							self.External['blue'][position] = {'red':red_partners, 'green':green_partners}
+						if m == 'blue' and j != 0:
+							self.External['green'].append(mB)
+							self.External['red'].append(mB)
 							continue
 
 					if j == 0:
-						if type != 'red' or i == 0:
+						if (m == 'blue' or m == 'green') or i == 0:
 							continue
 						else:
-							if position == ( round(position[0] - float(x_dist)/2, 3), round(position[1] + float(x_dist)/2, 3)):
-								green_partners = [( round(position[0] - float(x_dist)/2, 3), round(position[1] + float(x_dist)/2, 3))]
-								blue_partners = [( round(position[0] + float(x_dist)/2, 3), round(position[1] + float(x_dist)/2, 3))]
-							else:
-								green_partners = [( round(position[0] + float(x_dist)/2, 3), round(position[1] + float(x_dist)/2, 3))]
-								blue_partners = [( round(position[0] - float(x_dist)/2, 3), round(position[1] + float(x_dist)/2, 3))]
-							self.External['red'][position] = {'green':green_partners, 'blue':blue_partners}
+							self.External['blue'].append(measures[m])
+							self.External['green'].append(measures[m])
 							continue
-					
 
-					measure = Qubit(position, Charge(), type)
-					data = self.generateStabilizerData(position, scale, num_sides, angle)
-
-
-					if (j == 1 and type in ['blue', 'green']) or (i == 0 and type == 'blue') or (type == 'green' and i == N - j):
-						order = {}
-						
-						if (j == 1 and type in ['blue', 'green']):
-							for count in range(num_sides):
-								if count in [5,6]:
-									continue
-								if type == 'blue' and i == 0 and count in [2,3]:
-									continue
-								if type == 'green' and i == N - j and count in [0,1]:
-									continue
-								order[count] = data[count]
-
-						if i == 0 and type == 'blue':
-							self.boundary_syndromes['blue'][position] = []
-							self.boundary_syndromes['blue'][position].append(( round(position[0] - float(x_dist)/2, 3), round(position[1], 3)))
-							self.boundary_syndromes['blue'][position].append(( round(position[0], 3), round(position[1] + float(x_dist)/2, 3)))
-							red_position = ( round(position[0] - float(x_dist)/4, 3), round(position[1] - float(x_dist)/4, 3))
-							self.boundary_syndromes['red'][position] = red_position
-							self.boundary_data['green'].append((round(red_position[0], 3), round(red_position[1] + float(1)/sqrt(2)), 3))
-							if j != 0:
-								self.boundary_data['green'].append((round(red_position[0] - float(1)/sqrt(2), 3), round(red_position[1]), 3))
-							for count in range(num_sides):
-								if count in [2,3]:
-									continue
-								if j == 1 and count in [5,6]:
-									continue
-								order[count] = data[count]
-
-						if type == 'green' and i == N - j:
-							self.boundary_syndromes['green'][position] = []
-							self.boundary_syndromes['green'][position].append(( round(position[0] + float(x_dist)/2, 3), round(position[1], 3)))
-							self.boundary_syndromes['green'][position].append(( round(position[0], 3), round(position[1] + float(x_dist)/2, 3)))
-							red_position = ( round(position[0] + float(x_dist)/4, 3), round(position[1] - float(x_dist)/4, 3))
-							self.boundary_syndromes['red'][position] = red_position
-							self.boundary_data['blue'].append((round(red_position[0], 3), round(red_position[1] + float(1)/sqrt(2), 3)))
-							if j != 0:
-								self.boundary_data['blue'].append((round(red_position[0] + float(1)/sqrt(2), 3), round(red_position[1], 3)))
-							for count in range(num_sides):
-								if count in[0,1]:
-									continue
-								if j == 1 and count in [5,6]:
-									continue
-								order[count] = data[count]
-
-							
-
-				
+					if m == 'red1' or m == 'red2':
+						type = 'red'
 					else:
-						order = Order(data)
-					self.Stabilizers[type][position] = Stabilizer(type, data, order)
-						
-						
+						type = m
 
-class Color_6_6_6(ColorCode):
+					sides = self.types[type]['sides']
+					self.Stabilizers[type][measures[m]] = {'data': {}, 'charge': Charge(), 'order':{}, 'sides':sides}
+					P = self.Plaquette(measures[m], type)
+					for data in P:
+						count = P[data]
+						self.Stabilizers[type][measures[m]]['order'][count] = data
+						self.Stabilizers[type][measures[m]]['data'][data] = count
+						if data not in self.Primal.nodes():
+							self.Primal.add_node(data, charge = Charge())
+							self.Primal.node[data]['measures'] = {'red':[], 'blue':[], 'green':[]}
+						self.Primal.node[data]['measures'][type].append(measures[m])
 
-	def __init__(self, depth, dimension = 2):
-		self.code = '6_6_6'
-		ColorCode.__init__(self, depth, dimension)
 
-	def generateTypes(self):
-		self.types = {'red':{'num_sides':6,'scale':1}, 'blue':{'num_sides':6,'scale':1}, 'green':{'num_sides':6,'scale':1}}
+					if (j == 1 and type in ['blue', 'green']):
+						for count in [5,6]:
+							self = self.PrimalBound(count, m, measures)
+					if type == 'blue' and i == 0:
+						for count in [2,3]:
+							self = self.PrimalBound(count, m, measures)
+					if type == 'green' and i == N - j:
+						for count in [0,1]:
+							self = self.PrimalBound(count, m, measures)
+
+		self.generatePrimalEdges()
 
 
-class Triangular_6_6_6(Color_6_6_6):
 
-	def __init__(self, depth, dimension = 2):
-		Color_6_6_6.__init__(self, depth, dimension)
 
-	def generateStabilizers(self):
-		for type in self.types:
-			self.External[type] = {}
-			self.boundary_syndromes[type] = {}
-			self.boundary_data[type] = []
 
-		depth = self.depth
-		N = int(float(depth)/2)
-		for i in range(N + 1):
-			for j in range(N + 1 - i):
-				plaquettes = []
-				green_position = (round(3 * (i + float(j)/2), 3), round(float(3* sqrt(3) * j)/2, 3))
-				plaquettes.append({'type':'green','angle':0,'position':green_position})
-				plaquettes.append({'type':'blue','angle':0,'position':(round(green_position[0] + float(3)/2, 3), round(green_position[1] + float(sqrt(3))/2, 3))})
-				plaquettes.append({'type':'red','angle':0,'position':(round(green_position[0], 3), round(float(green_position[1] + sqrt(3)), 3))})
-				for face in plaquettes:
-					type, angle, position = face['type'], face['angle'], face['position']
-					self.syndromes[position] = Qubit(position, charge = Charge(), type = type)
-					num_sides, scale = self.types[type]['num_sides'], self.types[type]['scale']
-					
-					if j == 0:
-						if type != 'red' or i == 0:
-							continue
-						green_partners = []
-						green_partners.append(( round(position[0] + float(3)/2, 3), round(position[1] + float(sqrt(3))/2, 3)))
-						green_partners.append(( round(position[0] - float(3)/2, 3), round(position[1] + float(sqrt(3))/2, 3)))
-						blue_partners = [( round(position[0], 3), round(position[1] + sqrt(3), 3))]
-						self.External['red'][position] = {'green':green_partners, 'blue':blue_partners}
-						continue
-					if j == N - i:
-						if type == 'blue':
-							green_partners = [( round(position[0] - float(3)/2, 3), round(position[1] - float(sqrt(3))/2, 3))]
-							red_partners = []
-							red_partners.append(( round(position[0] + float(3)/2, 3), round(position[1] + float(sqrt(3))/2, 3)))
-							red_partners.append(( round(position[0] - float(3)/2, 3), round(position[1] + float(sqrt(3))/2, 3)))
-							self.External['blue'][position] = {'green':green_partners, 'red':red_partners}
-							continue
-
-					if i == 0:
-						if type == 'red':
-							continue
-						if type == 'green':
-							red_partners = [( round(position[0] + float(3)/2, 3), round(position[1] - float(sqrt(3))/2, 3))]
-							blue_partners = []
-							blue_partners.append(( round(position[0] + float(3)/2, 3), round(position[1] + float(sqrt(3))/2, 3)))
-							blue_partners.append(( round(position[0], 3), round(position[1] + sqrt(3), 3)))
-							self.External['green'][position] = {'blue':blue_partners, 'red':red_partners}
-							continue
-
-					measure = Qubit(position, Charge(), type)
-					data = self.generateStabilizerData(position, scale, num_sides, angle)
-					
-
-					if (j == 1 and type == 'green') or (i == 0 and type == 'blue') or (i == N - j and type == 'red'):
-						order = {}
-						for count in range(num_sides):
-							if (j == 1 and type == 'green'):
-								if count in [4,5]:
-									continue
-							if i == 0 and type == 'blue':
-								if count in [2,3]:
-									continue
-							if type == 'red' and i == N - j:
-								if count in[0,1]:
-									continue
-
-							order[count] = data[count]
-					else:
-						order = Order(data)
-					
-					self.Stabilizers[type][position] = Stabilizer(type, data, order)
-		
 
