@@ -1,4 +1,3 @@
-from common import *
  #
  # QTop
  #
@@ -66,6 +65,28 @@ class ColorCode(Code):
 								edge_type = self.complementaryType([type1, type2])
 								self.Dual[edge_type].add_edge(*(m1, m2), type = edge_type)
 
+
+
+	def transportSign(self, m1, m2):
+
+		mid_x = float(m1[0] + m2[0])/2
+		for t in self.types:
+			if m1 in self.Stabilizers[t]:
+				plaq = self.Stabilizers[t][m1]['order']
+				sides = self.types[t]['sides']
+
+		if 0 in plaq and (sides-1) in plaq:
+			if plaq[sides-1][0] < mid_x and mid_x < plaq[0][0] and m1[1]>m2[1]:
+				return 1
+		if int(float(sides)/2) in plaq and int(float(sides)/2)-1 in plaq:
+			if plaq[int(float(sides)/2)][0] < mid_x and mid_x < plaq[int(float(sides)/2)-1][0] and m1[1]<m2[1]:
+				return 1
+		return -1
+
+
+
+
+
 	######## Code Cycle #######
 
 	def CodeCycle(self, model, p):
@@ -121,6 +142,19 @@ class ColorCode(Code):
 			self.Primal.remove_node(node)
 		return self 
 
+	def hasLogicalError(self):
+		d = self.dimension
+		for charge_type in ['X','Z']:
+			E_FLAG = True
+			for type in self.types:
+				Sum = 0
+				for node in self.Boundary[type]:
+					Sum += self.Primal.node[node]['charge'][charge_type]
+				if Sum % d == 0:
+					E_FLAG = False
+			if E_FLAG:
+				return True
+		return False
 
 
 #############   6 - 6 - 6 Color Codes #############
@@ -141,7 +175,7 @@ class Color_6_6_6(ColorCode):
 		for type in self.types:
 			self.Dual[type] = nx.Graph()
 			self.Stabilizers[type] = {}
-			self.Boundary[type] = {}
+			self.Boundary[type] = []
 			self.External[type] = []
 
 		N = int(float(depth)/2)
@@ -189,16 +223,32 @@ class Color_6_6_6(ColorCode):
 							self.Primal.node[data]['measures'] = {'red':[], 'blue':[], 'green':[]}
 						self.Primal.node[data]['measures'][m].append(measures[m])
 
-					if (j == 1 and m == 'green'):
+					if j == 1 and m == 'green':
 						for count in [4,5]:
 							self = self.PrimalBound(count, m, measures)
+						for count in [0,3]:
+							bound_data = self.Stabilizers[m][measures[m]]['order'][count]
+							self.Boundary[m].append(bound_data)
+							if i == N-1 and count == 0:
+								bound_data = self.Stabilizers[m][measures[m]]['order'][count]
+								self.Boundary['red'].append(bound_data)
 					if i == 0 and m == 'blue':
 						for count in [2,3]:
 							self = self.PrimalBound(count, m, measures)
+						for count in [1,4]:
+							bound_data = self.Stabilizers[m][measures[m]]['order'][count]
+							self.Boundary[m].append(bound_data)
+							if j == 1 and count == 4:
+								self.Boundary['green'].append(bound_data)
 					if m == 'red' and i == N - j:
+						for count in [2,5]:
+							bound_data = self.Stabilizers[m][measures[m]]['order'][count]
+							self.Boundary[m].append(bound_data)
+							if i == 1 and count == 2:
+								bound_data = self.Stabilizers[m][measures[m]]['order'][count]
+								self.Boundary['blue'].append(bound_data)
 						for count in [0,1]:
 							self = self.PrimalBound(count, m, measures)
-
 
 		self.generatePrimalEdges()
 
@@ -258,12 +308,11 @@ class Color_4_8_8(ColorCode):
 							continue
 
 					if j == 0:
-						if (m == 'blue' or m == 'green') or i == 0:
+						if (m == 'blue') or (m == 'green') or i == 0:
 							continue
-						else:
-							self.External['blue'].append(measures[m])
-							self.External['green'].append(measures[m])
-							continue
+						self.External['blue'].append(measures[m])
+						self.External['green'].append(measures[m])
+						continue
 
 					if m == 'red1' or m == 'red2':
 						type = 'red'
@@ -287,8 +336,12 @@ class Color_4_8_8(ColorCode):
 						for count in [5,6]:
 							self = self.PrimalBound(count, m, measures)
 					if type == 'blue' and i == 0:
-						for count in [2,3]:
-							self = self.PrimalBound(count, m, measures)
+						if j == 1:
+							for count in [2,3,5,6]:
+								self = self.PrimalBound(count, m, measures)
+						else:
+							for count in [2,3]:
+								self = self.PrimalBound(count, m, measures)
 					if type == 'green' and i == N - j:
 						for count in [0,1]:
 							self = self.PrimalBound(count, m, measures)

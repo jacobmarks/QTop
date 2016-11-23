@@ -1,4 +1,4 @@
- #
+  #
  # QTop
  #
  # Copyright (c) 2016 Jacob Marks (jacob.marks@yale.edu)
@@ -12,6 +12,7 @@
 
 from common import *
 from matplotlib import path
+from math import floor
 
 ############ Decode function and base decoder classes ############
 
@@ -592,4 +593,173 @@ def correctLoops(code, loops_graph, charge_type):
 
     return code, loops_graph
 
+
+
+
+
+
+# GSP: Generalized Surface Projection Decoder #
+
+
+class GSP_decoder(decoder):
+
+    def __call__(self, code):
+        matching = self.algorithm()
+        for charge_type in ['Z']:
+            code = matching(code, charge_type)
+            # reset measurement edges to have 0 charge
+
+        # code = reset_measures(code)
+
+        return code
+
+    def algorithm(self):
+        return GSP()
+
+class GSP(matching_algorithm):
+
+    def __init__(self):
+        pass
+
+    def __call__(self, code, charge_type):
+        l,d = code.depth, code.dimension
+        errors, shrunk_errors = {}, {}
+        for type in code.types:
+            errors[type] = code.Syndrome(type, charge_type)
+            
+        # loops_graph = nx.Graph()
+        for t1 in code.types:
+            comps = [errors[t2] for t2 in code.types if t2 != t1]
+            shrunk_errors[t1] = nx.union(comps[0],comps[1])
+
+        unclustered_graph = nx.union(errors['red'], shrunk_errors['red'])
+
+        for edge in code.Primal.edges():
+            break
+
+        scale = 2*euclidean_dist(edge[0], edge[1])
+
+        loop_graph = nx.Graph()
+        # for iter in range(int(float(l/3))):
+        for iter in range(1):
+            clusters = GSP_Partition(unclustered_graph, (iter+2)*scale)
+
+            # look at each of the shrunk lattices
+
+            for cluster in clusters:
+                shrunk_cluster = {}
+                for type in code.types:
+                    shrunk_cluster[type] = GSP_shrunk_cluster(cluster, type)
+                    if len(shrunk_cluster[type]) in [0,1]:
+                        continue
+                    m2 = shrunk_cluster[type][0]
+                    for m1 in shrunk_cluster[type]:
+                        if m1 == m2:
+                            # figure out a way to add this back into the unclustered graph but only for this shrunk type
+                            continue
+                        loop_graph = GSP_transport(code, m1, m2, type, loop_graph)
+            print loop_graph.edges(data=True)
+        return code
+
+
+def GSP_transport(code, start, end, shrunk_type, loop_graph):
+    d = code.dimension
+    chain = GSP_Path(code.Dual[shrunk_type], start, end)
+    links = len(chain) -1
+    for i in range(links):
+        node1, node2 = chain[i], chain[i+1]
+        edge = (node1, node2)
+        sign = code.transportSign(node1, node2)
+        delta_charge = sign * start[1]['charge']
+
+        if edge not in loop_graph.edges():
+            loop_graph.add_edge(*edge, charge = delta_charge%d)
+        else:
+            prior_charge = loop_graph.get_edge_data(*edge)['charge']
+            loop_graph.get_edge_data(*edge)['charge'] = (prior_charge + delta_charge)%d
+    return loop_graph
+
+
+def GSP_Path(DualGraph, start, end):
+    terminal1, terminal2 = start[0], end[0]
+    if terminal1 in DualGraph.nodes() and terminal2 in DualGraph.nodes():
+        return nx.shortest_path(DualGraph, terminal1, terminal2)
+    elif terminal1 not in DualGraph.nodes():
+        ext = terminal1
+        terminal1 = DSP_AssociatedInternal(ext, DualGraph.nodes())
+        return DSP_Path(DualGraph, terminal2, terminal1) + [ext]
+    else:
+        return DSP_Path(DualGraph, terminal2, terminal1)
+
+def GSP_shrunk_cluster(cluster, type):
+    return [node for node in cluster if node[1]['type'] != type]
+
+def GSP_Partition(UnclusteredGraph, scale):
+    # Make edges on Unclustered graph
+    # between all nodes separated by distance 'scale'
+    for node1 in UnclusteredGraph.nodes():
+        for node2 in UnclusteredGraph.nodes():
+            if node1 != node2:
+                dist = euclidean_dist(node1, node2)
+                if dist <= scale:
+                    UnclusteredGraph.add_edge(*(node1, node2), weight=dist)
+    Clusters = []
+    subgraphs = nx.connected_component_subgraphs(UnclusteredGraph)
+    for i, sg in enumerate(subgraphs):
+        Clusters.append(sg.nodes(data=True))
+
+    return Clusters
+
+
+
+
+# Iteratively increases distance
+# finding maximal disjoint clusters and
+# annihilating neutral clusters at each distance
+
+# def GSP_Clustering(code, Syndrome, type, charge_type):
+
+#     d = code.dimension
+
+#     edge = code.Primal.edges[0]
+#     print edge
+
+    # # Add in Boundary elements
+    # for node in code.External[type]:
+    #     Syndrome.add_node(node, charge=0, external=True)
+
+
+    # scale = 1
+    # NeutralClusters = []
+    # # Copy Graph for modification
+    # UnclusteredGraph = Syndrome.copy()
+
+    # while StillClustering(UnclusteredGraph):
+    #     clusters = Partition(UnclusteredGraph, code, type, scale)
+    #     for cluster in clusters:
+    #         NetCharge = ClusterCharge(UnclusteredGraph, cluster, dim) 
+    #         if NetCharge == 'Neutral':
+    #             NeutralClusters.append(cluster)
+    #             Fuse(code, UnclusteredGraph, cluster, dim, type, charge_type)
+    #             Annihilate(UnclusteredGraph, cluster)
+    #         elif NetCharge == 'BoundaryNeutral':
+    #             NeutralClusters.append(cluster)
+    #             BoundFuse(code, UnclusteredGraph, cluster, dim, type, charge_type)
+    #             Annihilate(UnclusteredGraph, cluster)
+        
+    #     scale += 1      # increase distance scale
+
+    # return code
+
+
+        # Exts = code.External['red']+code.External['blue']+code.External['green']
+        # code, loops_graph = correctLoops(code, loops_graph, charge_type)
+        # for node1 in loops_graph.nodes():
+        #     if node1 in Exts:
+        #         for node2 in loops_graph.nodes():
+        #             if node2 in Exts and node2 != node1:
+        #                 if nx.has_path(loops_graph,node1,node2):
+        #                     loops_graph.add_edge(*(node1, node2))
+        # code, loops_graph = correctLoops(code, loops_graph, charge_type)
+        # return code
 

@@ -60,15 +60,19 @@ def run(sim, L_vals, p_vals, num_trials):
 	p_success_array = [1 - p for p in p_error_array]
 
 	X = [p_phys_array,L_array]
-	params, _ = curve_fit(form, X, p_success_array, maxfev=int(10e7))
-	threshold = params[1]
+	param_bounds=([0,-np.inf,-np.inf,-np.inf,-np.inf,0,-np.inf],[1,np.inf,np.inf,np.inf,np.inf,np.inf,np.inf])
+
+
+	params, _ = curve_fit(form, X, p_success_array, bounds = param_bounds)
+	threshold = params[0]
 	print threshold
+	print params
 	title = "threshold = " + str(threshold)
 	plt.title(str(title))
 	plt.xlabel("Physical Error Rate")
 	plt.ylabel("Logical Error Rate")
 	plt.legend(loc='upper left')
-	plt.savefig('test2.png')
+	plt.savefig('test4.png')
 	plt.show()
 
 

@@ -1,4 +1,4 @@
- #
+#
  # QTop
  #
  # Copyright (c) 2016 Jacob Marks (jacob.marks@yale.edu)
@@ -61,7 +61,7 @@ class Code:
         for measure_qubit in self.Stabilizers[type]:
             charge = self.Stabilizers[type][measure_qubit]['charge'][charge_type]
             if charge != 0:
-                Syndrome.add_node(measure_qubit, charge=charge)
+                Syndrome.add_node(measure_qubit, charge=charge, type = type)
         return Syndrome
 
     def PhysicalErrors(self):
@@ -97,6 +97,7 @@ class Code:
             return False
         else:
             return True
+
 
 
 
