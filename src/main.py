@@ -25,10 +25,10 @@ from simulation import *
 
 
 model = CodeCapacity()
-decoder = HDRG_decoder()
+decoder = MWPM_decoder()
 sim = simulation(2, model, decoder)
-L_vals = [3,5]
-p_vals = np.linspace(.12,.16,20)
-num_trials = 100
+L_vals = [3,5,7,9]
+p_vals = np.linspace(.12,.2,9)
+num_trials = 1000
 run(sim, L_vals, p_vals, num_trials)
 

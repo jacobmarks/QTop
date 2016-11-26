@@ -1,4 +1,4 @@
-#
+ #
  # QTop
  #
  # Copyright (c) 2016 Jacob Marks (jacob.marks@yale.edu)
@@ -97,7 +97,6 @@ class Code:
             return False
         else:
             return True
-
 
 
 

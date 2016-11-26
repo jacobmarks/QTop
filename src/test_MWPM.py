@@ -14,7 +14,7 @@ import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
 from surface_codes import *
-from decoders import *
+from decoders import mwpm
 from error_models import *
 from visualization import *
 
@@ -25,7 +25,7 @@ model = CodeCapacity()
 code = code.CodeCycle(model, p)
 PlotPlaquette(code, "Before Decoding", 1)
 
-decoder = MWPM_decoder()
+decoder = mwpm.MWPM_decoder()
 code = decoder(code)
 PlotPlaquette(code, "After Decoding", 2)
 plt.show()

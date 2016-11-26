@@ -16,21 +16,22 @@ import matplotlib.pyplot as plt
 from surface_codes import *
 from color_codes import *
 from error_models import *
-from decoders import *
+from decoders import dsp
 from visualization import *
 
 
 ##################   Testing ##################
 
 
-L, d, p = 13, 2, .005
+L, d, p = 13, 2, 0.04
 
 code = Color_6_6_6(L,d)
 model = CodeCapacity()
 code = code.CodeCycle(model, p)
-PlotPlaquette(code, "Before Decoding", 1)
+# PlotPlaquette(code, "Before Decoding", 1)
 
-decoder = DSP_decoder()
+decoder = dsp.DSP_decoder()
 code = decoder(code)
-PlotPlaquette(code, "After Decoding", 2)
+PlotPrimal(code, "Bound Data", 1)
+# PlotPlaquette(code, "After Decoding", 2)
 plt.show()

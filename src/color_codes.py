@@ -1,3 +1,4 @@
+from common import *
  #
  # QTop
  #
@@ -34,6 +35,12 @@ class ColorCode(Code):
 			if type not in types:
 				complement = type
 		return complement
+
+	def complementaryTypes(self, type):
+		for t1 in self.types:
+			if t1 != type:
+				t2 = self.complementaryType([type, t1])
+				return t1, t2
 
 	def Plaquette(self, measure_qubit, type):
 		checks = {}

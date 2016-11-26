@@ -18,12 +18,12 @@ def PlotPrimal(code, title, plot_number = 1):
 	Primal = plt.figure(plot_number)
 	for node in code.Primal.nodes():
 		charge = code.Primal.node[node]['charge']
-		if charge['X'] != 0 and charge['Z'] != 0:
-			plt.scatter(*node,marker="*",color='orange',s=200*float(charge['Z'])/(dim-1))
-		elif charge['Z'] != 0:
+		# if charge['X'] != 0 and charge['Z'] != 0:
+		# 	plt.scatter(*node,marker="*",color='orange',s=200*float(charge['Z'])/(dim-1))
+		if charge['Z'] != 0:
 			plt.scatter(*node,marker="*",color='blue',s=200*float(charge['Z'])/(dim-1))
-		elif charge['X'] != 0:
-			plt.scatter(*node,marker="*",color='red',s=200*float(charge['X'])/(dim-1))
+		# elif charge['X'] != 0:
+		# 	plt.scatter(*node,marker="*",color='red',s=200*float(charge['X'])/(dim-1))
 		else:
 			plt.scatter(*node,color='black')
 	for edge in code.Primal.edges():
@@ -32,6 +32,8 @@ def PlotPrimal(code, title, plot_number = 1):
 	for type in code.External:
 		for node in code.External[type]:
 			plt.scatter(*node,color=code.colors[type],marker='D')
+
+
 	plt.title(str(title))
 
 	return plt.figure(plot_number)
