@@ -1,4 +1,4 @@
- #
+#
  # QTop
  #
  # Copyright (c) 2016 Jacob Marks (jacob.marks@yale.edu)
@@ -31,12 +31,11 @@ for m in code.Stabilizers['red']:
 	for d1 in code.Plaquette(m,'red'):
 		code.Primal.node[d1]['charge']['Z'] = 5
 		break
-	break
 	# for d2 in code.Plaquette(m,'red'):
 	# 	if d2 != d1:
-	# 		code.Primal.node[d2]['charge']['Z'] = 2
+	# 		code.Primal.node[d2]['charge']['Z'] = 4
 	# 		break
-	# break
+	break
 
 
 

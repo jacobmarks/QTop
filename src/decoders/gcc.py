@@ -67,7 +67,6 @@ class GCC(matching_algorithm):
         # for iter in range(int(float(l/3))):
         for iter in range(4):
             clusters = GCC_Partition(unclustered_graph, (iter+2)*scale)
-            # print clusters
             for cluster in clusters:
             	code, unclustered_graph = GCC_Annihilate(cluster, code, unclustered_graph, charge_type)
   
@@ -103,16 +102,12 @@ def GCC_Annihilate(cluster, code, unclustered_graph, ct):
 	
 	color_clusters[type], unclustered_graph, code = GCC_Two_Color_Simplify(color_clusters, unclustered_graph, code, ct)
 
-	# then if only 1 of each color, transport toward each other
-	# make triangle and transport 1 color to the other 2 colors
-	# if you have 1 or 2 qudits left over, add them to the unclustered graph
 	return code, unclustered_graph
 
 
 def GCC_One_Color_Simplify(cc, uc, code, t, ct):
 	d = code.dimension
 	while len(cc) > 1 :
-	# if len(cc) > 1:
 		start, end = cc[0], cc[1]
 		k1, k2 = start[1]['charge'], end[1]['charge']
 		cc.remove(start)
@@ -170,26 +165,97 @@ def GCC_Two_Color_Simplify(cc, uc, code, ct):
 	ms = {}
 	for t in code.types:
 		ms[t] = cc[t][0]
-	print ms
-	# k1, k2 = start[1]['charge'], end[1]['charge']
-	# cc.remove(start)
-	# uc.remove_node(start[0])
-	# code.Stabilizers[t][start[0]]['charge'][ct] = 0
-	
-	# cc.remove(end)
-	# if (k1 - k2)%d == 0:
-	# 	uc.remove_node(end[0])
-	# 	code.Stabilizers[t][end[0]]['charge'][ct] = 0
-	# else:
-	# 	code.Stabilizers[t][end[0]]['charge'][ct] = (k1 - k2)%d
-	# 	uc.node[end[0]]['charge'] = (k1 - k2)%d
-	# 	new_end = (end[0],{'charge':(k1 - k2)%d,'type':t})
-	# 	cc.append(new_end)
 
-	# code = GCC_One_Color_Transport(start, end, code, t, ct)
+	triangle, uc, code, ct = GCC_Connect(ms, uc, code, ct)
+
+	uc, code = GCC_Two_Color_Transport(triangle, uc, code, ct)
 
 
 	return cc, uc, code
+
+
+
+def GCC_Connect(ms, uc, code, ct):
+
+	t1, t2, t3 = 'red', 'blue', 'green'
+	m1, m2, m3 = ms[t1], ms[t2], ms[t3]
+	path1 = nx.shortest_path(code.Dual[t1], m2[0], m3[0])
+	path2 = nx.shortest_path(code.Dual[t2], m1[0], m3[0])
+
+
+	if len(path1) > 2:
+
+		
+		start1, end1 = m1, (path2[-2], {'type':t2, 'charge':0})
+		code = GCC_One_Color_Transport(start1, end1, code, t1, ct)
+
+		k1 = start1[1]['charge']
+		uc.remove_node(start1[0])
+		code.Stabilizers[t1][start1[0]]['charge'][ct] = 0
+
+		uc.add_node(end1[0], type = t1, charge = k1)
+		code.Stabilizers[t1][end1[0]]['charge'][ct] = k1
+	else:
+		end1 = m1
+
+	if len(path2) > 2:
+
+		start2, end2 = m2, (path1[-2], {'type':t1, 'charge':0})
+		code = GCC_One_Color_Transport(start2, end2, code, t2, ct)
+		
+		k2 = start2[1]['charge']
+		uc.remove_node(start2[0])
+		code.Stabilizers[t2][start2[0]]['charge'][ct] = 0
+
+		uc.add_node(end2[0], type = t2, charge = k2)
+		code.Stabilizers[t2][end1[0]]['charge'][ct] = k2
+	else:
+		end2 = m2
+
+	ms[t1], ms[t2] = end1, end2
+
+
+	return ms, uc, code, ct
+
+
+
+def GCC_Two_Color_Transport(triangle, uc, code, ct):
+	k = triangle['red'][1]['charge']
+
+	r, g, b = triangle['red'][0], triangle['green'][0], triangle['blue'][0]
+	d = code.dimension
+	sides = code.types['red']['sides']
+
+	cycle = [r, g, b, r]
+	loop = path.Path(cycle)
+	for data in code.Primal.nodes():
+		if loop.contains_points([data]) == [True]:
+			c = code.Primal.node[data]['charge'][ct]
+			count = code.Stabilizers['red'][cycle[0]]['data'][data]
+			sign = Sign(count, sides)
+			code.Primal.node[data]['charge'][ct] = (c - sign * k)%d
+	
+
+	uc.remove_node(r)
+	code.Stabilizers['red'][r]['charge'][ct] = 0
+
+	for color in ['green', 'blue']:
+		m = triangle[color][0]
+		c = triangle[color][1]['charge']
+		sign = code.transportSign(r, m)
+		charge = (c - sign * k)%d
+
+		code.Stabilizers[color][m]['charge'][ct] = charge
+		if charge == 0:
+			uc.remove_node(m)
+		else:
+			print 'else'
+			uc.node[m]['charge'] = charge
+
+	print uc
+
+
+	return uc, code
 
 
 

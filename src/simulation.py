@@ -70,7 +70,7 @@ def run(sim, L_vals, p_vals, num_trials):
 	plt.xlabel("Physical Error Rate")
 	plt.ylabel("Logical Error Rate")
 	plt.legend(loc='upper left')
-	plt.savefig('test4.png')
+	plt.savefig('plot.png')
 	plt.show()
 
 
