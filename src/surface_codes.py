@@ -11,11 +11,9 @@
  # (at your option) any later version.
 
 
-import sys
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
-
 from common import *
 from error_models import *
 

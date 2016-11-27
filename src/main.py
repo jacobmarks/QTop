@@ -11,12 +11,11 @@
  # (at your option) any later version.
 
 
-import sys
-sys.path.insert(0, 'Decoders/')
 from common import *
 from surface_codes import *
+from color_codes import *
 from error_models import *
-from decoders import *
+from decoders import mwpm
 from visualization import *
 from threshold import *
 from simulation import *
@@ -25,10 +24,10 @@ from simulation import *
 
 
 model = CodeCapacity()
-decoder = MWPM_decoder()
+decoder = mwpm.MWPM_decoder()
 sim = simulation(2, model, decoder)
-L_vals = [3,5,7,9]
+L_vals = [3,5]
 p_vals = np.linspace(.12,.2,9)
-num_trials = 1000
+num_trials = 100
 run(sim, L_vals, p_vals, num_trials)
 

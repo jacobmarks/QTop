@@ -1,4 +1,3 @@
-from common import *
  #
  # QTop
  #
@@ -14,9 +13,8 @@ from common import *
 from math import *
 import networkx as nx
 import matplotlib.pyplot as plt
-from surface_codes import *
+from common import *
 from error_models import *
-from decoders import *
 from visualization import *
 
 

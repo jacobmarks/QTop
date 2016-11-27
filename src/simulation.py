@@ -10,14 +10,12 @@
  # the Free Software Foundation, either version 3 of the License, or
  # (at your option) any later version.
 
- # from common import *
-# from geometry import *
+from common import *
 from error_models import *
 from surface_codes import *
-# from color_codes import *
+from color_codes import *
 from threshold import *
-from common import *
-from decoders import *
+from decoders import decoders
 
 
 class simulation:
@@ -31,7 +29,7 @@ class simulation:
 
 		code = SurfaceCode(L, self.dimension)
 		code = code.CodeCycle(self.model, p)
-		Decode(code, self.decoder)
+		decoders.Decode(code, self.decoder)
 		return code.Assessment()
 
 
