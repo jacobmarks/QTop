@@ -9,7 +9,9 @@
  # it under the terms of the GNU General Public License as published by
  # the Free Software Foundation, either version 3 of the License, or
  # (at your option) any later version.
-
+import pickle
+import time
+import random
 from common import *
 from error_models import *
 from surface_codes import *
@@ -52,27 +54,16 @@ def run(sim, L_vals, p_vals, num_trials):
 			pL_error_vals.append(p_error)
 
 		p_error_array += pL_error_vals
-		plt.plot(p_vals, pL_error_vals, label=str(L))
 
 
 	p_success_array = [1 - p for p in p_error_array]
 
-	X = [p_phys_array,L_array]
-	param_bounds=([0,-np.inf,-np.inf,-np.inf,-np.inf,0,-np.inf],[1,np.inf,np.inf,np.inf,np.inf,np.inf,np.inf])
-
-
-	params, _ = curve_fit(form, X, p_success_array, bounds = param_bounds)
-	threshold = params[0]
-	print threshold
-	print params
-	title = "threshold = " + str(threshold)
-	plt.title(str(title))
-	plt.xlabel("Physical Error Rate")
-	plt.ylabel("Logical Error Rate")
-	plt.legend(loc='upper left')
-	plt.savefig('plot.png')
-	plt.show()
-
+	d = {'p_succ': p_success_array, 'p_phys': p_phys_array, 'L':L_array}
+	current_date_time = time.strftime("%c")
+	current_date_time = current_date_time.replace(" ", "_")
+	file_name = '../data_runs/' + current_date_time + ".pickle"
+	with open(file_name, 'wb') as handle:
+		pickle.dump(d, handle)
 
 
 

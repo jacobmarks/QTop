@@ -10,10 +10,14 @@
  # the Free Software Foundation, either version 3 of the License, or
  # (at your option) any later version.
 
-from common import *
 from decoders import *
 from matplotlib import path
 from math import floor
+import sys
+sys.path.append('../../')
+from src import common
+import networkx as nx
+import numpy as np
 
 
 class HDRG_decoder(surface_decoder):
@@ -182,7 +186,7 @@ def Transport(code, fixed_node, mobile_node, dim, type, charge_type):
             if shared in code.Stabilizers[type][next]['data']:
                 num_sides = code.Stabilizers[type][next]['sides']
                 count = code.Stabilizers[type][previous]['data'][shared]
-                sign = Sign(count, num_sides)
+                sign = common.Sign(count, num_sides)
                 delta_charge = sign * charge
                 data_charge = code.Primal.node[shared]['charge'][charge_type]
                 code.Primal.node[shared]['charge'][charge_type] = (data_charge - delta_charge)%dim
@@ -227,7 +231,7 @@ def BoundTransport(code, fixed_node, mobile_node, dim, type, charge_type):
 
         count = code.External[type][mobile_node[0]]['order']
         num_sides = code.External[type][mobile_node[0]]['sides']
-        sign = Sign(count, num_sides)
+        sign = common.Sign(count, num_sides)
         delta_charge = sign * charge
         first_link_charge = code.Primal.node[shared]['charge'][charge_type]
         code.Primal.node[shared]['charge'][charge_type] = (first_link_charge - delta_charge)%dim
@@ -242,7 +246,7 @@ def BoundTransport(code, fixed_node, mobile_node, dim, type, charge_type):
 
                     num_sides = code.Stabilizers[type][previous]['sides']
                     count = code.Stabilizers[type][previous]['data'][shared]
-                    sign = Sign(count, num_sides)
+                    sign = common.Sign(count, num_sides)
                     delta_charge = sign * charge
                     data_charge = code.Primal.node[shared]['charge'][charge_type]
                     code.Primal.node[shared]['charge'][charge_type] = (data_charge - delta_charge)%dim

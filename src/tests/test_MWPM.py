@@ -10,23 +10,26 @@
  # the Free Software Foundation, either version 3 of the License, or
  # (at your option) any later version.
 
+import sys
+sys.path.append('../')
+from src import surface_codes
+from src import error_models
+from src import visualization
+sys.path.append('decoders/')
+from mwpm import *
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
-from surface_codes import *
-from decoders import rg
-from error_models import *
-from visualization import *
 
-L, d, p = 7, 7, .1
+L, d, p = 7, 2, .2
 
-code = SurfaceCode(L, d)
-model = CodeCapacity()
+code = surface_codes.SurfaceCode(L, d)
+model = error_models.CodeCapacity()
 code = code.CodeCycle(model, p)
-PlotPlaquette(code, "Before Decoding", 1)
+visualization.PlotPlaquette(code, "Before Decoding", 1)
 
-decoder = rg.HDRG_decoder()
+decoder = MWPM_decoder()
 code = decoder(code)
-PlotPlaquette(code, "After Decoding", 2)
+visualization.PlotPlaquette(code, "After Decoding", 2)
 plt.show()
 

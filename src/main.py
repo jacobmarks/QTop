@@ -10,7 +10,6 @@
  # the Free Software Foundation, either version 3 of the License, or
  # (at your option) any later version.
 
-
 from common import *
 from surface_codes import *
 from color_codes import *
@@ -26,8 +25,8 @@ from simulation import *
 model = CodeCapacity()
 decoder = mwpm.MWPM_decoder()
 sim = simulation(2, model, decoder)
-L_vals = [3,5]
+L_vals = [3,5,7,9]
 p_vals = np.linspace(.12,.2,9)
-num_trials = 100
+num_trials = 10
 run(sim, L_vals, p_vals, num_trials)
 

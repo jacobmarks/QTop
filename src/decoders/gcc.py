@@ -10,10 +10,14 @@
  # the Free Software Foundation, either version 3 of the License, or
  # (at your option) any later version.
 
-from common import *
 from decoders import *
 from matplotlib import path
 from math import floor
+import sys
+sys.path.append('../../')
+from src import common
+import networkx as nx
+import numpy as np
 
 
 ################ GCC ###################
@@ -48,7 +52,7 @@ class GCC(matching_algorithm):
         unclustered_graph = nx.union(s['green'], nx.union(s['red'], s['blue']))
         for edge in code.Primal.edges():
             break
-        scale = 2*euclidean_dist(edge[0], edge[1])
+        scale = 2*common.euclidean_dist(edge[0], edge[1])
 
         loop_graph = nx.Graph()
         # for iter in range(int(float(l/3))):
@@ -65,7 +69,7 @@ def GCC_Partition(UnclusteredGraph, scale):
 	for node1 in UnclusteredGraph.nodes():
 		for node2 in UnclusteredGraph.nodes():
 			if node1 != node2:
-				dist = euclidean_dist(node1, node2)
+				dist = common.euclidean_dist(node1, node2)
 				if dist <= scale:
 					UnclusteredGraph.add_edge(*(node1, node2), weight=dist)
 	Clusters = []

@@ -10,10 +10,18 @@
  # the Free Software Foundation, either version 3 of the License, or
  # (at your option) any later version.
 
-from common import *
+# from common import *
 from decoders import *
 from matplotlib import path
 from math import floor
+# from common import *
+import sys
+sys.path.append('../../')
+from src import common
+# from common import *
+import networkx as nx
+import numpy as np
+
 
 
  ############# Minimum Weight Perfect Matching ###############
@@ -50,7 +58,7 @@ def MinWeightMatching(code, Syndrome, type, charge_type):
         for check2 in Syndrome.nodes():
             if check1 != check2:
                 # weight = - code.distance(type, check1, check2)
-                weight = - euclidean_dist(check1, check2)
+                weight = - common.euclidean_dist(check1, check2)
                 Syndrome.add_edge(*(check1, check2), weight=weight)
 
     # Generate Boundary Graph
@@ -61,7 +69,7 @@ def MinWeightMatching(code, Syndrome, type, charge_type):
         external_node = AssociatedExternal(node, code.Dual[type], code.External[type])
         External_Graph.add_node(external_node, charge=(-charge) % dim)
         # weight = -code.distance(type, node, external_node)
-        weight = - euclidean_dist(node, external_node)
+        weight = - common.euclidean_dist(node, external_node)
         Syndrome.add_edge(*(node, external_node), weight=weight)
 
     # Ensure even number of elements in Syndrome

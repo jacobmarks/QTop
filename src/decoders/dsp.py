@@ -10,10 +10,14 @@
  # the Free Software Foundation, either version 3 of the License, or
  # (at your option) any later version.
 
-from common import *
 from decoders import *
 from matplotlib import path
 from math import floor
+import sys
+sys.path.append('../../')
+from src import common
+import networkx as nx
+import numpy as np
 
 
 
@@ -23,7 +27,7 @@ def DSP_Matching(Syndrome, External, dim):
     for check1 in Syndrome.nodes():
         for check2 in Syndrome.nodes():
             if check1 != check2:
-                weight = - euclidean_dist(check1, check2)
+                weight = - common.euclidean_dist(check1, check2)
                 Syndrome.add_edge(*(check1, check2), weight=weight)
 
     # Generate Boundary Graph
@@ -33,7 +37,7 @@ def DSP_Matching(Syndrome, External, dim):
         charge = Syndrome.node[node]['charge']
         external_node = DSP_AssociatedExternal(node, External)
         External_Graph.add_node(external_node, charge=(-charge) % dim)
-        weight = - euclidean_dist(node, external_node)
+        weight = - common.euclidean_dist(node, external_node)
         Syndrome.add_edge(*(node, external_node), weight=weight)
 
     # Ensure even number of elements in Syndrome
@@ -73,10 +77,10 @@ def DSP_Matching(Syndrome, External, dim):
 
 def DSP_AssociatedExternal(int_node, external_nodes):
     associate = external_nodes[0]
-    min_dist = euclidean_dist(int_node, associate)
+    min_dist = common.euclidean_dist(int_node, associate)
 
     for candidate in external_nodes:
-        distance = euclidean_dist(int_node, candidate)
+        distance = common.euclidean_dist(int_node, candidate)
         if distance < min_dist:
             min_dist = distance
             associate = candidate
@@ -84,10 +88,10 @@ def DSP_AssociatedExternal(int_node, external_nodes):
 
 def DSP_AssociatedInternal(ext_node, internal_nodes):
     associate = internal_nodes[0]
-    min_dist = euclidean_dist(ext_node, associate)
+    min_dist = common.euclidean_dist(ext_node, associate)
 
     for candidate in internal_nodes:
-        distance = euclidean_dist(ext_node, candidate)
+        distance = common.euclidean_dist(ext_node, candidate)
         if distance < min_dist:
             min_dist = distance
             associate = candidate

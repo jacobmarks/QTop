@@ -10,14 +10,16 @@
  # the Free Software Foundation, either version 3 of the License, or
  # (at your option) any later version.
 
-from math import *
+import sys
+sys.path.append('../')
+from src import color_codes
+from src import error_models
+from src import visualization
+sys.path.append('decoders/')
+from dsp import *
 import networkx as nx
+import numpy as np
 import matplotlib.pyplot as plt
-from surface_codes import *
-from color_codes import *
-from error_models import *
-from decoders import *
-from visualization import *
 
 
 ##################   Testing ##################
@@ -25,13 +27,13 @@ from visualization import *
 
 L, d, p = 13, 2, 0.04
 
-code = Color_4_8_8(L,d)
-# model = CodeCapacity()
-# code = code.CodeCycle(model, p)
-# # PlotPlaquette(code, "Before Decoding", 1)
+code = color_codes.Color_6_6_6(L,d)
+model = error_models.CodeCapacity()
+code = code.CodeCycle(model, p)
+# PlotPlaquette(code, "Before Decoding", 1)
 
-# decoder = DSP_decoder()
-# code = decoder(code)
-PlotPrimal(code, "Bound Data", 1)
+decoder = DSP_decoder()
+code = decoder(code)
+visualization.PlotPrimal(code, "Bound Data", 1)
 # PlotPlaquette(code, "After Decoding", 2)
 plt.show()

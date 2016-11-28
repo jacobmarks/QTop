@@ -13,6 +13,11 @@
 from common import *
 from matplotlib import path
 from math import floor
+import sys
+sys.path.append('../')
+sys.path.append('../../')
+
+from src import common
 
 ############ Decode function and base decoder classes ############
 
@@ -44,7 +49,7 @@ class surface_decoder(decoder):
 def reset_measures(code):
     for type in code.types:
         for measure_qubit in code.Stabilizers[type]:
-            code.Stabilizers[type][measure_qubit]['charge'] = Charge()
+            code.Stabilizers[type][measure_qubit]['charge'] = common.Charge()
     return code
 
 
