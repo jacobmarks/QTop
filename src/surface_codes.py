@@ -46,6 +46,13 @@ class SurfaceCode(Code):
     def generateColors(self):
         self.colors = {'X':'red', 'Z':'blue','data':'black'}
 
+    def Sign(self, count, num_sides):
+        if count in range(num_sides/2):
+            sign = 1 # Add control to target
+        else:
+            sign = -1 # subtract control from target
+        return sign
+
 
     def generateCode(self):
         self.types = ['X','Z']

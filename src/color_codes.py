@@ -40,6 +40,12 @@ class ColorCode(Code):
 				t2 = self.complementaryType([type, t1])
 				return t1, t2
 
+	def Sign(self, count, num_sides = 6):
+		if count % 2 == 0:
+			return 1
+		else:
+			return -1
+
 	def Plaquette(self, measure_qubit, type):
 		checks = {}
 

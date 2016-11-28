@@ -10,7 +10,7 @@
  # the Free Software Foundation, either version 3 of the License, or
  # (at your option) any later version.
 
-from common import *
+# from common import *
 from matplotlib import path
 from math import floor
 import sys

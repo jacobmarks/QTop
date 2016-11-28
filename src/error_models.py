@@ -99,7 +99,8 @@ class ErrorModel:
 	def Sum(self, code, count, num_sides, type, charge_type, p):
 		dim = code.dimension
 
-		sign = Sign(count, num_sides)
+		# sign = Sign(count, num_sides)
+		sign = code.Sign(count, num_sides)
 
 
 		for measure_qubit in code.Stabilizers[type]:

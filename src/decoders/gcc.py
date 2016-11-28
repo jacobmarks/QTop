@@ -56,7 +56,7 @@ class GCC(matching_algorithm):
 
         loop_graph = nx.Graph()
         # for iter in range(int(float(l/3))):
-        for iter in range(3):
+        for iter in range(4):
             clusters = GCC_Partition(unclustered_graph, (iter+2)*scale)
             for cluster in clusters:
             	code, unclustered_graph = GCC_Annihilate(cluster, code, unclustered_graph, charge_type)
@@ -106,28 +106,18 @@ def GCC_One_Color_Simplify(cc, uc, code, t, ct):
 		cc.remove(start)
 		uc.remove_node(start[0])
 		code.Stabilizers[t][start[0]]['charge'][ct] = 0
-		
-		cc.remove(end)
-		if (k1 - k2)%d == 0:
-			uc.remove_node(end[0])
-			code.Stabilizers[t][end[0]]['charge'][ct] = 0
-		else:
-			code.Stabilizers[t][end[0]]['charge'][ct] = (k2 - k1)%d
-			uc.node[end[0]]['charge'] = (k2 - k1)%d
-			new_end = (end[0],{'charge':(k2 - k1)%d,'type':t})
-			cc.append(new_end)
 
-		code = GCC_One_Color_Transport(start, end, code, t, ct)
+		cc, uc, code = GCC_One_Color_Transport(start, end, cc, uc, code, t, ct)
 	
 
 	return cc, uc, code
 
 
-def GCC_One_Color_Transport(start, end, code, t, ct):
-	k = start[1]['charge']
+def GCC_One_Color_Transport(s, e, cc, uc, code, t, ct):
+	k1, k2 = s[1]['charge'], e[1]['charge']
 	d = code.dimension
 	t1, t2 = code.complementaryTypes(t)
-	dual1 = nx.shortest_path(code.Dual[t1], start[0], end[0])
+	dual1 = nx.shortest_path(code.Dual[t1], s[0], e[0])
 	num_loops = (len(dual1)-1)/2
 	for i in range(num_loops):
 		start, end = dual1[2*i +2], dual1[2*i]
@@ -138,15 +128,28 @@ def GCC_One_Color_Transport(start, end, code, t, ct):
 		for data in code.Primal.nodes():
 			if loop1.contains_points([data]) == [True]:
 				c = code.Primal.node[data]['charge'][ct]
-				code.Primal.node[data]['charge'][ct] = (c+k)%d
-
-		sign = code.transportSign(triangle2[1], triangle2[2])
+				count = code.Stabilizers[t][s[0]]['data'][data]
+				sign = code.Sign(count)
+				code.Primal.node[data]['charge'][ct] = (c - sign * k1)%d
+				break
 		loop2 = path.Path(triangle2)
 		for data in code.Primal.nodes():
 			if loop2.contains_points([data]) == [True]:
 				c = code.Primal.node[data]['charge'][ct]
-				code.Primal.node[data]['charge'][ct] = (c+ sign * k)%d
-	return code
+				code.Primal.node[data]['charge'][ct] = (c - sign * k1)%d
+
+		cc.remove(e)
+		if (k2 - sign * k1)%d == 0:
+			uc.remove_node(e[0])
+			code.Stabilizers[t][e[0]]['charge'][ct] = 0
+			print 'YEES'
+		else:
+			code.Stabilizers[t][e[0]]['charge'][ct] = (k2 - sign * k1)%d
+			uc.node[e[0]]['charge'] = (k2 - sign * k1)%d
+			new_end = (e[0],{'charge':(k2 - sign * k1)%d,'type':t})
+			cc.append(new_end)
+
+	return cc, uc, code
 
 
 def GCC_Two_Color_Simplify(cc, uc, code, ct):
@@ -225,7 +228,7 @@ def GCC_Two_Color_Transport(triangle, uc, code, ct):
 		if loop.contains_points([data]) == [True]:
 			c = code.Primal.node[data]['charge'][ct]
 			count = code.Stabilizers['red'][cycle[0]]['data'][data]
-			sign = Sign(count, sides)
+			sign = code.Sign(count, sides)
 			code.Primal.node[data]['charge'][ct] = (c - sign * k)%d
 	
 
@@ -235,8 +238,7 @@ def GCC_Two_Color_Transport(triangle, uc, code, ct):
 	for color in ['green', 'blue']:
 		m = triangle[color][0]
 		c = triangle[color][1]['charge']
-		sign = code.transportSign(r, m)
-		charge = (c - sign * k)%d
+		charge = (c - k)%d
 
 		code.Stabilizers[color][m]['charge'][ct] = charge
 		if charge == 0:

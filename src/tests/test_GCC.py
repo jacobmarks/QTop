@@ -36,7 +36,7 @@ for m in code.Stabilizers['red']:
 		break
 	for d2 in code.Plaquette(m,'red'):
 		if d2 != d1:
-			code.Primal.node[d2]['charge']['Z'] = 3
+			code.Primal.node[d2]['charge']['Z'] = 5
 			break
 	for d3 in code.Plaquette(m,'red'):
 		if d3 != d1 and d3 != d2:
@@ -44,11 +44,11 @@ for m in code.Stabilizers['red']:
 			code.Primal.node[d3]['charge']['Z'] = 1
 			break
 	break
-# for m in code.Stabilizers['green']:
-# 	for d1 in code.Plaquette(m,'green'):
-# 		code.Primal.node[d1]['charge']['Z'] = 1
-# 		break
-# 	break
+for m in code.Stabilizers['green']:
+	for d1 in code.Plaquette(m,'green'):
+		code.Primal.node[d1]['charge']['Z'] = 2
+		break
+	break
 
 
 model = error_models.CodeCapacity()
