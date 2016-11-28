@@ -16,18 +16,6 @@ from matplotlib import path
 from math import floor
 
 
-def GSP_Path(DualGraph, start, end):
-    terminal1, terminal2 = start[0], end[0]
-    if terminal1 in DualGraph.nodes() and terminal2 in DualGraph.nodes():
-        return nx.shortest_path(DualGraph, terminal1, terminal2)
-    elif terminal1 not in DualGraph.nodes():
-        ext = terminal1
-        terminal1 = DSP_AssociatedInternal(ext, DualGraph.nodes())
-        return DSP_Path(DualGraph, terminal2, terminal1) + [ext]
-    else:
-        return DSP_Path(DualGraph, terminal2, terminal1)
-
-
 ################ GCC ###################
 
 class GCC_decoder(decoder):
@@ -58,14 +46,13 @@ class GCC(matching_algorithm):
             s[type] = code.Syndrome(type, charge_type)
 
         unclustered_graph = nx.union(s['green'], nx.union(s['red'], s['blue']))
-
         for edge in code.Primal.edges():
             break
         scale = 2*euclidean_dist(edge[0], edge[1])
 
         loop_graph = nx.Graph()
         # for iter in range(int(float(l/3))):
-        for iter in range(4):
+        for iter in range(3):
             clusters = GCC_Partition(unclustered_graph, (iter+2)*scale)
             for cluster in clusters:
             	code, unclustered_graph = GCC_Annihilate(cluster, code, unclustered_graph, charge_type)
@@ -109,7 +96,9 @@ def GCC_One_Color_Simplify(cc, uc, code, t, ct):
 	d = code.dimension
 	while len(cc) > 1 :
 		start, end = cc[0], cc[1]
+		print start, end
 		k1, k2 = start[1]['charge'], end[1]['charge']
+		print k1, k2
 		cc.remove(start)
 		uc.remove_node(start[0])
 		code.Stabilizers[t][start[0]]['charge'][ct] = 0
@@ -119,9 +108,9 @@ def GCC_One_Color_Simplify(cc, uc, code, t, ct):
 			uc.remove_node(end[0])
 			code.Stabilizers[t][end[0]]['charge'][ct] = 0
 		else:
-			code.Stabilizers[t][end[0]]['charge'][ct] = (k1 - k2)%d
-			uc.node[end[0]]['charge'] = (k1 - k2)%d
-			new_end = (end[0],{'charge':(k1 - k2)%d,'type':t})
+			code.Stabilizers[t][end[0]]['charge'][ct] = (k2 - k1)%d
+			uc.node[end[0]]['charge'] = (k2 - k1)%d
+			new_end = (end[0],{'charge':(k2 - k1)%d,'type':t})
 			cc.append(new_end)
 
 		code = GCC_One_Color_Transport(start, end, code, t, ct)
@@ -133,7 +122,7 @@ def GCC_One_Color_Simplify(cc, uc, code, t, ct):
 def GCC_One_Color_Transport(start, end, code, t, ct):
 	k = start[1]['charge']
 	d = code.dimension
-	t1, t2 = code.complementaryTypes('t')
+	t1, t2 = code.complementaryTypes(t)
 	dual1 = nx.shortest_path(code.Dual[t1], start[0], end[0])
 	num_loops = (len(dual1)-1)/2
 	for i in range(num_loops):
@@ -249,10 +238,8 @@ def GCC_Two_Color_Transport(triangle, uc, code, ct):
 		if charge == 0:
 			uc.remove_node(m)
 		else:
-			print 'else'
 			uc.node[m]['charge'] = charge
 
-	print uc
 
 
 	return uc, code
