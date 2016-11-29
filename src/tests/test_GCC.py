@@ -29,7 +29,6 @@ L, d, p = 13, 7, 0.0
 
 code = color_codes.Color_6_6_6(L,d)
 
-# if (12.0, 8.66) in 
 for m in code.Stabilizers['red']:
 	for d1 in code.Plaquette(m,'red'):
 		code.Primal.node[d1]['charge']['Z'] = 5
@@ -44,11 +43,11 @@ for m in code.Stabilizers['red']:
 			code.Primal.node[d3]['charge']['Z'] = 1
 			break
 	break
-for m in code.Stabilizers['green']:
-	for d1 in code.Plaquette(m,'green'):
-		code.Primal.node[d1]['charge']['Z'] = 2
-		break
-	break
+# for m in code.Stabilizers['green']:
+# 	for d1 in code.Plaquette(m,'green'):
+# 		code.Primal.node[d1]['charge']['Z'] = 2
+# 		break
+# 	break
 
 
 model = error_models.CodeCapacity()

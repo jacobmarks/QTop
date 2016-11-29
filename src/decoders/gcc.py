@@ -55,12 +55,13 @@ class GCC(matching_algorithm):
         scale = 2*common.euclidean_dist(edge[0], edge[1])
 
         loop_graph = nx.Graph()
-        # for iter in range(int(float(l/3))):
+        # i = 2
+        # while unclustered_graph.nodes() != []
+        	# i += 1
         for iter in range(4):
             clusters = GCC_Partition(unclustered_graph, (iter+2)*scale)
             for cluster in clusters:
-            	code, unclustered_graph = GCC_Annihilate(cluster, code, unclustered_graph, charge_type)
-  
+            	code, unclustered_graph = GCC_Annihilate(cluster, code, unclustered_graph, charge_type, (iter+2)*scale)
         return code
 
 def GCC_Partition(UnclusteredGraph, scale):
@@ -79,7 +80,7 @@ def GCC_Partition(UnclusteredGraph, scale):
 
 	return Clusters
 
-def GCC_Annihilate(cluster, code, unclustered_graph, ct):
+def GCC_Annihilate(cluster, code, unclustered_graph, ct, scale):
 	color_clusters = {}
 	for type in code.types:
 		color_clusters[type] = []
@@ -91,9 +92,63 @@ def GCC_Annihilate(cluster, code, unclustered_graph, ct):
 	for type in code.types:
 		color_clusters[type], unclustered_graph, code = GCC_One_Color_Simplify(color_clusters[type], unclustered_graph, code, type, ct)
 	
-	color_clusters[type], unclustered_graph, code = GCC_Two_Color_Simplify(color_clusters, unclustered_graph, code, ct)
-
+	color_clusters, unclustered_graph, code = GCC_Two_Color_Simplify(color_clusters, unclustered_graph, code, ct)
+	
+	ts = [t for t in color_clusters if color_clusters[t] != []]
+	if len(ts) != 0:
+		ms = [color_clusters[t] for t in ts][0]
+		for type in code.External:
+			for ext in code.External[type]:
+				print ms
+				if all(common.euclidean_dist(ext, m[0]) < scale for m in ms):
+					color_clusters, unclustered_graph, code = GCC_Boundary_Simplify(color_clusters, unclustered_graph, code, ct, scale)
+					break
+			break
 	return code, unclustered_graph
+
+def GCC_Boundary_Simplify(cc, uc, code, ct, scale):
+	while len([t for t in cc if cc[t] != []]) != 0:
+
+		excited_types = [t for t in cc if cc[t] != []]
+		if len(excited_types) == 2:
+			cc, uc, code = GCC_Boundary_Two_Color_Transport(cc, uc, code, ct, scale)
+	return cc, uc, code
+
+def GCC_Boundary_Two_Color_Transport(cc, uc, code, ct, scale):
+	d = code.dimension
+	[t1, t2] = [t for t in cc if cc[t] != []]
+	node1, node2 = cc[t1][0], cc[t2][0]
+	k1, k2 = node1[1]['charge'], node2[1]['charge']
+	ext_t = code.complementaryType([t1, t2])
+	for ext in code.External[ext_t]:
+		if common.euclidean_dist(ext, node1[0]) < scale and common.euclidean_dist(ext, node2[0]) < scale:
+			print "Boundary Neutral!!!!"
+			cycle = [node1[0], node2[0], ext, node1[0]]
+			loop = path.Path(cycle)
+			for data in code.Primal.nodes():
+				if loop.contains_points([data]) == [True] and data in code.Stabilizers[t1][node1[0]]['data']:
+					count = code.Stabilizers[t1][node1[0]]['data'][data]
+					sign = code.Sign(count)
+					break
+			for data in code.Primal.nodes():
+				if loop.contains_points([data]) == [True]:
+					c = code.Primal.node[data]['charge'][ct]
+					code.Primal.node[data]['charge'][ct] = (c - sign * k1)%d
+			
+			uc.remove_node(node1[0])
+			cc[t1].remove(node1)
+			code.Stabilizers[t1][node1[0]]['charge'][ct] = 0
+			charge = (k2 - k1)%d
+
+			code.Stabilizers[t2][node2[0]]['charge'][ct] = charge
+			if charge == 0:
+				uc.remove_node(node2[0])
+				cc[t2].remove(node2)
+			else:
+				uc.node[node2[0]]['charge'] = charge
+				cc[t2][0]['charge'] = charge
+			break
+	return cc, uc, code
 
 
 def GCC_One_Color_Simplify(cc, uc, code, t, ct):
@@ -163,10 +218,7 @@ def GCC_Two_Color_Simplify(cc, uc, code, ct):
 		ms[t] = cc[t][0]
 
 	triangle, uc, code, ct = GCC_Connect(ms, uc, code, ct)
-
 	uc, code = GCC_Two_Color_Transport(triangle, uc, code, ct)
-
-
 	return cc, uc, code
 
 
@@ -209,8 +261,6 @@ def GCC_Connect(ms, uc, code, ct):
 		end2 = m2
 
 	ms[t1], ms[t2] = end1, end2
-
-
 	return ms, uc, code, ct
 
 
