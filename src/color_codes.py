@@ -203,13 +203,11 @@ class Color_6_6_6(ColorCode):
 					if j == 0:
 						if m != 'red' or i == 0:
 							continue
-						self.External['blue'].append(measures[m])
-						self.External['green'].append(measures[m])
+						self.External['red'].append(measures[m])
 						continue
 					if j == N - i:
 						if m == 'blue':
-							self.External['red'].append(measures[m])
-							self.External['green'].append(measures[m])
+							self.External['blue'].append(measures[m])
 							continue
 
 					if i == 0:
@@ -218,9 +216,7 @@ class Color_6_6_6(ColorCode):
 						if m == 'green':
 							if j == 0:
 								continue
-							
-							self.External['red'].append(measures[m])
-							self.External['blue'].append(measures[m])
+							self.External['green'].append(measures[m])
 							continue
 
 					self.Stabilizers[m][measures[m]] = {'data': {}, 'charge': Charge(), 'order':{}, 'sides':6}

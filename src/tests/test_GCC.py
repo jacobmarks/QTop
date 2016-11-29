@@ -29,26 +29,32 @@ L, d, p = 13, 7, 0.0
 
 code = color_codes.Color_6_6_6(L,d)
 
-for m in code.Stabilizers['red']:
-	for d1 in code.Plaquette(m,'red'):
-		code.Primal.node[d1]['charge']['Z'] = 5
-		break
-	for d2 in code.Plaquette(m,'red'):
-		if d2 != d1:
-			code.Primal.node[d2]['charge']['Z'] = 5
-			break
-	for d3 in code.Plaquette(m,'red'):
-		if d3 != d1 and d3 != d2:
-			print d3
-			code.Primal.node[d3]['charge']['Z'] = 1
-			break
-	break
+# for m in code.Stabilizers['red']:
+# 	for d1 in code.Plaquette(m,'red'):
+# 		code.Primal.node[d1]['charge']['Z'] = 5
+# 		break
+# 	for d2 in code.Plaquette(m,'red'):
+# 		if d2 != d1:
+# 			code.Primal.node[d2]['charge']['Z'] = 5
+# 			break
+# 	for d3 in code.Plaquette(m,'red'):
+# 		if d3 != d1 and d3 != d2:
+# 			print d3
+# 			code.Primal.node[d3]['charge']['Z'] = 1
+# 			break
+# 	break
 # for m in code.Stabilizers['green']:
 # 	for d1 in code.Plaquette(m,'green'):
 # 		code.Primal.node[d1]['charge']['Z'] = 2
 # 		break
 # 	break
 
+for d in code.Primal.nodes():
+	ms = code.Primal.node[d]['measures']
+	if ms['red'] != [] and ms['blue'] != [] and ms['green'] == []:
+		code.Primal.node[d]['charge']['Z'] = 2
+		print d
+		break
 
 model = error_models.CodeCapacity()
 code = code.CodeCycle(model, p)
