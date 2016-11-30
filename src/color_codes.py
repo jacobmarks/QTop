@@ -1,4 +1,4 @@
- #
+#
  # QTop
  #
  # Copyright (c) 2016 Jacob Marks (jacob.marks@yale.edu)
@@ -66,6 +66,7 @@ class ColorCode(Code):
 
 	def generateDual(self):
 
+		# If stabilizer has "external" then add to dual, remove from stabilizers?
 		for type1 in self.Stabilizers:
 			for m1 in self.Stabilizers[type1]:
 				for count in self.Stabilizers[type1][m1]['order']:
@@ -77,27 +78,6 @@ class ColorCode(Code):
 								self.Dual[edge_type].add_edge(*(m1, m2), type = edge_type)
 
 
-
-	def transportSign(self, m1, m2):
-
-		mid_x = float(m1[0] + m2[0])/2
-		for t in self.types:
-			if m1 in self.Stabilizers[t]:
-				plaq = self.Stabilizers[t][m1]['order']
-				sides = self.types[t]['sides']
-
-		if 0 in plaq and (sides-1) in plaq:
-			if plaq[sides-1][0] < mid_x and mid_x < plaq[0][0] and m1[1]>m2[1]:
-				return 1
-		if int(float(sides)/2) in plaq and int(float(sides)/2)-1 in plaq:
-			if plaq[int(float(sides)/2)][0] < mid_x and mid_x < plaq[int(float(sides)/2)-1][0] and m1[1]<m2[1]:
-				return 1
-		return -1
-
-
-
-
-
 	######## Code Cycle #######
 
 	def CodeCycle(self, model, p):
@@ -105,10 +85,7 @@ class ColorCode(Code):
 	# length of code cycle is 2*(max number of sides + 2)
 	# 'X' and 'Z' checks each require one step for initialization,
 	# one step for each data qubit check operation, and a final measurement
-		max_num_sides = 0
-		for type in self.types:
-			if self.types[type]['sides'] > max_num_sides:
-				max_num_sides = self.types[type]['sides']
+		max_sides = max([self.types[type]['sides'] for type in self.types])
 
 		for charge_type in ['X','Z']:
 
@@ -119,7 +96,7 @@ class ColorCode(Code):
 				self = model.Identity(self, p)
 
 			# Stabilizer Check Operations
-			for count in range(max_num_sides):
+			for count in range(max_sides):
 				for type in self.types:
 					sides = self.types[type]['sides']
 					self = model.Sum(self, count, sides, type, charge_type, p)
@@ -144,6 +121,7 @@ class ColorCode(Code):
 						self.Primal.add_edge(*(vertex1,vertex2), color = 'black')
 
 	def PrimalBound(self, count, type, measures):
+		# need to make list of measures not contain externals
 		dict1 = self.Stabilizers[type][measures[type]]['order']
 		dict2 = self.Stabilizers[type][measures[type]]['data']
 		if count in dict1:
@@ -233,27 +211,10 @@ class Color_6_6_6(ColorCode):
 					if j == 1 and m == 'green':
 						for count in [4,5]:
 							self = self.PrimalBound(count, m, measures)
-						for count in [0,3]:
-							bound_data = self.Stabilizers[m][measures[m]]['order'][count]
-							self.Boundary[m].append(bound_data)
-							if i == N-1 and count == 0:
-								bound_data = self.Stabilizers[m][measures[m]]['order'][count]
-								self.Boundary['red'].append(bound_data)
 					if i == 0 and m == 'blue':
 						for count in [2,3]:
 							self = self.PrimalBound(count, m, measures)
-						for count in [1,4]:
-							bound_data = self.Stabilizers[m][measures[m]]['order'][count]
-							self.Boundary[m].append(bound_data)
-							if j == 1 and count == 4:
-								self.Boundary['green'].append(bound_data)
 					if m == 'red' and i == N - j:
-						for count in [2,5]:
-							bound_data = self.Stabilizers[m][measures[m]]['order'][count]
-							self.Boundary[m].append(bound_data)
-							if i == 1 and count == 2:
-								bound_data = self.Stabilizers[m][measures[m]]['order'][count]
-								self.Boundary['blue'].append(bound_data)
 						for count in [0,1]:
 							self = self.PrimalBound(count, m, measures)
 
