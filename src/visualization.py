@@ -74,7 +74,10 @@ def PlotPlaquette(code, title, plot_number = 3):
 				plt.scatter(*qubit,color=code.colors[type])
 
 		for edge in code.Dual[type].edges():
-			plt.plot((edge[0][0],edge[1][0]),(edge[0][1],edge[1][1]),color=code.colors[type])
+			if any(edge[0] in code.External[t] for t in code.types) or any(edge[1] in code.External[t] for t in code.types):
+				plt.plot((edge[0][0],edge[1][0]),(edge[0][1],edge[1][1]),color=code.colors[type], linestyle = '--')
+			else:
+				plt.plot((edge[0][0],edge[1][0]),(edge[0][1],edge[1][1]),color=code.colors[type])
 	
 	for node in code.Primal.nodes():
 		charge = code.Primal.node[node]['charge']

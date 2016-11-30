@@ -12,6 +12,7 @@
 
 import sys
 sys.path.append('../')
+from src import common
 from src import color_codes
 from src import error_models
 from src import visualization
@@ -25,44 +26,41 @@ import matplotlib.pyplot as plt
 ##################   Testing ##################
 
 
-L, d, p = 13, 7, 0.0
+L, d, p = 9, 7, 0.0
 
 code = color_codes.Color_6_6_6(L,d)
 
-# for m in code.Stabilizers['red']:
-# 	for d1 in code.Plaquette(m,'red'):
-# 		code.Primal.node[d1]['charge']['Z'] = 5
+
+# for m in code.Stabilizers['blue']:
+# 	if len(code.Stabilizers['blue'][m]['data']) == 6:
+# 		d0, d1, d2 = code.Stabilizers['blue'][m]['order'][0], code.Stabilizers['blue'][m]['order'][1], code.Stabilizers['blue'][m]['order'][2]
+# 		code.Primal.node[d0]['charge']['Z'] = 5
+# 		code.Primal.node[d1]['charge']['Z'] = 1
+# 		code.Primal.node[d2]['charge']['Z'] = 3
 # 		break
-# 	for d2 in code.Plaquette(m,'red'):
-# 		if d2 != d1:
-# 			code.Primal.node[d2]['charge']['Z'] = 5
-# 			break
-# 	for d3 in code.Plaquette(m,'red'):
-# 		if d3 != d1 and d3 != d2:
-# 			print d3
-# 			code.Primal.node[d3]['charge']['Z'] = 1
-# 			break
-# 	break
+
+for m in code.Stabilizers['red']:
+	if len(code.Stabilizers['red'][m]['data']) == 6:
+		d0, d1, d5 = code.Stabilizers['red'][m]['order'][0], code.Stabilizers['red'][m]['order'][1], code.Stabilizers['red'][m]['order'][5]
+		code.Primal.node[d0]['charge']['Z'] = 2
+		code.Primal.node[d1]['charge']['Z'] = 4
+		code.Primal.node[d5]['charge']['Z'] = 3
+		break
+	
 # for m in code.Stabilizers['green']:
 # 	for d1 in code.Plaquette(m,'green'):
-# 		code.Primal.node[d1]['charge']['Z'] = 2
-# 		break
+# 		if d1 in code.Primal.nodes():
+# 			code.Primal.node[d1]['charge']['Z'] = 2
+# 			break
 # 	break
-
-for d in code.Primal.nodes():
-	ms = code.Primal.node[d]['measures']
-	if ms['red'] != [] and ms['blue'] != [] and ms['green'] == []:
-		code.Primal.node[d]['charge']['Z'] = 2
-		print d
-		break
 
 model = error_models.CodeCapacity()
 code = code.CodeCycle(model, p)
 
-
-visualization.PlotPlaquette(code, "Before Decoding", 1)
+visualization.PlotPrimal(code, "Before Decoding", 1)
+visualization.PlotPlaquette(code, "Before Decoding", 2)
 
 decoder = GCC_decoder()
 code = decoder(code)
-visualization.PlotPlaquette(code, "After Decoding", 2)
+visualization.PlotPlaquette(code, "After Decoding", 3)
 plt.show()

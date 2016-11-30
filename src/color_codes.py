@@ -1,4 +1,4 @@
-#
+ #
  # QTop
  #
  # Copyright (c) 2016 Jacob Marks (jacob.marks@yale.edu)
@@ -155,16 +155,16 @@ class Color_6_6_6(ColorCode):
 		ColorCode.__init__(self, depth, dimension)
 
 	def generateCode(self):
-		self.types = {}
-		self.types['red'] = {'sides':6,'scale':1, 'angle':0}
-		self.types['blue'] = {'sides':6,'scale':1, 'angle':0}
-		self.types['green'] = {'sides':6,'scale':1, 'angle':0}
 		depth = self.depth
+
+		self.types = {}
+		for type in ['red', 'blue', 'green']:
+			self.types[type] = {'sides':6,'scale':1, 'angle':0}
+		
 
 		for type in self.types:
 			self.Dual[type] = nx.Graph()
 			self.Stabilizers[type] = {}
-			self.Boundary[type] = []
 			self.External[type] = []
 
 		N = int(float(depth)/2)
@@ -176,17 +176,13 @@ class Color_6_6_6(ColorCode):
 				measures = {'red':mR, 'blue':mB, 'green':mG}
 
 				for m in measures:
-
-
 					if j == 0:
 						if m != 'red' or i == 0:
 							continue
 						self.External['red'].append(measures[m])
-						continue
 					if j == N - i:
 						if m == 'blue':
 							self.External['blue'].append(measures[m])
-							continue
 
 					if i == 0:
 						if m == 'red':
@@ -195,7 +191,6 @@ class Color_6_6_6(ColorCode):
 							if j == 0:
 								continue
 							self.External['green'].append(measures[m])
-							continue
 
 					self.Stabilizers[m][measures[m]] = {'data': {}, 'charge': Charge(), 'order':{}, 'sides':6}
 					P = self.Plaquette(measures[m], m)
@@ -208,113 +203,44 @@ class Color_6_6_6(ColorCode):
 							self.Primal.node[data]['measures'] = {'red':[], 'blue':[], 'green':[]}
 						self.Primal.node[data]['measures'][m].append(measures[m])
 
-					if j == 1 and m == 'green':
-						for count in [4,5]:
-							self = self.PrimalBound(count, m, measures)
-					if i == 0 and m == 'blue':
-						for count in [2,3]:
-							self = self.PrimalBound(count, m, measures)
-					if m == 'red' and i == N - j:
-						for count in [0,1]:
-							self = self.PrimalBound(count, m, measures)
-
 		self.generatePrimalEdges()
 
+		for data in self.Primal.nodes():
+			if len([type for type in self.types if self.Primal.node[data]['measures'][type] != []]) == 1:
+				t = [type for type in self.types if self.Primal.node[data]['measures'][type] != []][0]
+				m = self.Primal.node[data]['measures'][t][0]
+				count = self.Stabilizers[t][m]['data'][data]
+				del self.Stabilizers[t][m]['order'][count]
+				del self.Stabilizers[t][m]['data'][data]
+				self.Primal.remove_node(data)
+				continue
 
+		for data in self.Primal.nodes():
+			for type in self.External:
+				p0, p1 = self.External[type][0:2]
+				if data not in self.Primal.nodes():
+					break
 
-#############   4 - 8 - 8 Color Codes #############
-
-
-
-class Color_4_8_8(ColorCode):
-
-	def __init__(self, depth, dimension = 2):
-		self.code = '4_8_8'
-		ColorCode.__init__(self, depth, dimension)
-
-	def generateCode(self):
-		self.types = {}
-		self.types['red'] = {'sides':4, 'scale':float(1)/sqrt(2), 'angle':0}
-		self.types['blue'] = {'sides':8, 'scale':float(1)/(2*sin(float(pi)/8)), 'angle':float(pi)/8}
-		self.types['green'] = {'sides':8,'scale':float(1)/(2*sin(float(pi)/8)), 'angle':float(pi)/8}
-		depth = self.depth
-
-		for type in self.types:
-			self.Dual[type] = nx.Graph()
-			self.Stabilizers[type] = {}
-			self.Boundary[type] = {}
-			self.External[type] = []
-
-		N = int(float(depth -1)/2)
-		x = 1 + sqrt(2)
-
-		for j in range(N + 1):
-			for i in range(N + 1 - j):
-				mG = (round(x * ( 2 * i + j), 3), round(x * j,3))
-				mB = (round(mG[0] + x, 3), mG[1])
-				mR1 = (round(mG[0] - float(x)/2, 3), round(float(mG[1] + float(x)/2), 3))
-				mR2 = (round(mG[0] + float(x)/2, 3), round(float(mG[1] + float(x)/2), 3))
-				measures = {'red1':mR1, 'red2':mR2, 'blue':mB, 'green':mG}
-
-				for m in measures:
-					if i == 0:
-						if m == 'red1' or m == 'red2':
+				if colinear(p0, p1, data):
+					for t in self.Primal.node[data]['measures']:
+						if self.Primal.node[data]['measures'][t] == []:
 							continue
-						elif type == 'green':
-							if j == 0:
-								continue
-							self.External['red'].append(mG)
-							self.External['blue'].append(mG)
-							continue
-
-					if i == N - j:
-						if m == 'red2':
-							 continue
-						if m == 'blue' and j != 0:
-							self.External['green'].append(mB)
-							self.External['red'].append(mB)
-							continue
-
-					if j == 0:
-						if (m == 'blue') or (m == 'green') or i == 0:
-							continue
-						self.External['blue'].append(measures[m])
-						self.External['green'].append(measures[m])
-						continue
-
-					if m == 'red1' or m == 'red2':
-						type = 'red'
-					else:
-						type = m
-
-					sides = self.types[type]['sides']
-					self.Stabilizers[type][measures[m]] = {'data': {}, 'charge': Charge(), 'order':{}, 'sides':sides}
-					P = self.Plaquette(measures[m], type)
-					for data in P:
-						count = P[data]
-						self.Stabilizers[type][measures[m]]['order'][count] = data
-						self.Stabilizers[type][measures[m]]['data'][data] = count
-						if data not in self.Primal.nodes():
-							self.Primal.add_node(data, charge = Charge())
-							self.Primal.node[data]['measures'] = {'red':[], 'blue':[], 'green':[]}
-						self.Primal.node[data]['measures'][type].append(measures[m])
+						m = self.Primal.node[data]['measures'][t][0]
+						count = self.Stabilizers[t][m]['data'][data]
+						del self.Stabilizers[t][m]['order'][count]
+						del self.Stabilizers[t][m]['data'][data]
+					self.Primal.remove_node(data)
+					break
 
 
-					if (j == 1 and type in ['blue', 'green']):
-						for count in [5,6]:
-							self = self.PrimalBound(count, m, measures)
-					if type == 'blue' and i == 0:
-						if j == 1:
-							for count in [2,3,5,6]:
-								self = self.PrimalBound(count, m, measures)
-						else:
-							for count in [2,3]:
-								self = self.PrimalBound(count, m, measures)
-					if type == 'green' and i == N - j:
-						for count in [0,1]:
-							self = self.PrimalBound(count, m, measures)
+		
 
-		self.generatePrimalEdges()
+
+
+
+
+
+
 
 
 

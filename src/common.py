@@ -21,6 +21,11 @@ def removekey(d, key):
     del r[key]
     return r
 
+def colinear(p0, p1, p2):
+    x1, y1 = p1[0] - p0[0], p1[1] - p0[1]
+    x2, y2 = p2[0] - p0[0], p2[1] - p0[1]
+    return abs(x1 * y2 - x2 * y1)< 1e-6
+
 def manhattan_dist(A,B):
     return abs(A[0]-B[0]) + abs(A[1]-B[1])
 
