@@ -27,6 +27,6 @@ decoder = mwpm.MWPM_decoder()
 sim = simulation(2, 'Surface Code', [model, 'Code Capacity'], [decoder, 'MWPM'])
 L_vals = [3,5,7]
 p_vals = np.linspace(.12,.2,9)
-num_trials = 1
+num_trials = 1000
 run(sim, L_vals, p_vals, num_trials)
 
