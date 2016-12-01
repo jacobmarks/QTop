@@ -51,10 +51,12 @@ for i in range(len(params)):
 
 p_err = np.array(error)
 threshold, threshold_uncert = params[0], p_err[0]
-title = "threshold = " + str(round(threshold, 3)) + "$\pm$" + str(round(threshold_uncert, 3))
+code, decoder, model, trials, dim = d['code_type'], d['decoder_type'], d['model_type'], d['trials'], d['dimension']
+# title = "threshold = " + str(round(threshold, 3)) + "$\pm$" + str(round(threshold_uncert, 3))
+title = "d = " + str(dim) + " "+ str(code) + " under " + str(model) + " Error Model"
 plt.title(str(title))
 plt.xlabel("Physical Error Rate")
 plt.ylabel("Logical Error Rate")
-plt.legend(loc='upper left')
+plt.legend(loc='upper left', title = "code depths")
 plt.savefig('../plots/' + name + '.png')
 plt.show()

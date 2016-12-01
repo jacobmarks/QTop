@@ -24,14 +24,15 @@ class simulation:
 
 	def __init__(self, dimension, code_type, model, decoder):
 		self.model = model
-		self.decoder = decoder
+		[self.decoder, self.decoder_type] = decoder
+		[self.model, self.model_type] = model
 		self.dimension = dimension
 		self.code_type = code_type
 
 	def __call__(self, L, p):
-		if self.code_type == 'SurfaceCode':
+		if self.code_type == 'Surface Code':
 			code = SurfaceCode(L, self.dimension)
-		if self.code_type == 'Color666':
+		if self.code_type == '6-6-6 Color Code':
 			code = Color666(L, self.dimension)
 		code = code.CodeCycle(self.model, p)
 		decoders.Decode(code, self.decoder)
@@ -62,6 +63,10 @@ def run(sim, L_vals, p_vals, num_trials):
 	p_success_array = [1 - p for p in p_error_array]
 
 	d = {'p_succ': p_success_array, 'p_phys': p_phys_array, 'L':L_array}
+	d['trials'] = num_trials
+	d['dimension'] = sim.dimension
+	d['code_type'], d['model_type'], d['decoder_type'] = sim.code_type, sim.model_type, sim.decoder_type
+
 	current_date_time = time.strftime("%c")
 	current_date_time = current_date_time.replace(" ", "_")
 	file_name = '../data_runs/' + current_date_time + ".pickle"

@@ -135,7 +135,7 @@ print code.hasLogicalError()
 
 ## Putting it all Together
 
-In this brief tutorial, we've introduced the fundamentals of codes, error models, and decoders. These are the three basic ingredients of a `simulation`. Then, `sim = simulation(2, `Color666`, model, decoder)` instantiates a simulation object. The first two input arguments are used to construct the code itself. We can run a simulation by calling our simulation object, with a code depth `L`, and a physical error rate `p`. We succeed if we decode our code without any logical errors, in which case `sim(L, p)` returns `True `. Otherwise, we fail.
+In this brief tutorial, we've introduced the fundamentals of codes, error models, and decoders. These are the three basic ingredients of a `simulation`. Then, `sim = simulation(2, `666 Color Code`, [model, "Test Model"], [decoder, "GCC"])` instantiates a simulation object. The first two input arguments are used to construct the code itself. We can run a simulation by calling our simulation object, with a code depth `L`, and a physical error rate `p`. We succeed if we decode our code without any logical errors, in which case `sim(L, p)` returns `True `. Otherwise, we fail.
 
 We can `run` this simulation by specifying a range of probabilities and code depths, and the number of trials to conduct for each depth-probability combination.
 
