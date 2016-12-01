@@ -22,14 +22,17 @@ from decoders import decoders
 
 class simulation:
 
-	def __init__(self, dimension, model, decoder):
+	def __init__(self, dimension, code_type, model, decoder):
 		self.model = model
 		self.decoder = decoder
 		self.dimension = dimension
+		self.code_type = code_type
 
 	def __call__(self, L, p):
-
-		code = SurfaceCode(L, self.dimension)
+		if self.code_type == 'SurfaceCode':
+			code = SurfaceCode(L, self.dimension)
+		if self.code_type == 'Color666':
+			code = Color666(L, self.dimension)
 		code = code.CodeCycle(self.model, p)
 		decoders.Decode(code, self.decoder)
 		return code.Assessment()
