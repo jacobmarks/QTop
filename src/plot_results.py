@@ -40,10 +40,18 @@ for i in range(num_depths):
 X = [phys,L]
 
 param_bounds=([0,-np.inf,-np.inf,-np.inf,-np.inf,0,-np.inf],[1,np.inf,np.inf,np.inf,np.inf,np.inf,np.inf])
-params, _ = curve_fit(form, X, succ, bounds = param_bounds, max_nfev = 10e7)
-# max_nfev = 10e7
-threshold = params[0]
-title = "threshold = " + str(threshold)
+params, pcov = curve_fit(form, X, succ, bounds = param_bounds, max_nfev = 10e7)
+
+error = []
+for i in range(len(params)):
+	try:
+		error.append(np.absolute(pcov[i][i])**0.5)
+	except:
+		error.append( 0.00 )
+
+p_err = np.array(error)
+threshold, threshold_uncert = params[0], p_err[0]
+title = "threshold = " + str(round(threshold, 3)) + "$\pm$" + str(round(threshold_uncert, 3))
 plt.title(str(title))
 plt.xlabel("Physical Error Rate")
 plt.ylabel("Logical Error Rate")

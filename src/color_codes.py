@@ -132,16 +132,18 @@ class ColorCode(Code):
 		return self 
 
 	def hasLogicalError(self):
+		# check if correction commutes or anticommutes with logical operator on boundary
 		d = self.dimension
-		for charge_type in ['X','Z']:
-			E_FLAG = True
-			for type in self.types:
-				Sum = 0
-				for node in self.Boundary[type]:
-					Sum += self.Primal.node[node]['charge'][charge_type]
-				if Sum % d == 0:
-					E_FLAG = False
-			if E_FLAG:
+		for ct in ['X','Z']:
+			Sum = 0
+			for ext in self.External['red']:
+				for data in self.Stabilizers['red'][ext]['data']:
+					count = self.Stabilizers['red'][ext]['data'][data]
+					sign = self.Sign(count)
+					c = self.Primal.node[data]['charge'][ct]
+					Sum += sign * c
+		
+			if Sum % d != 0:
 				return True
 		return False
 

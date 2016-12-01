@@ -71,8 +71,9 @@ class ErrorModel:
 	def Initialize(self, code, type, p):
 		dim = code.dimension
 		for measure_qubit in code.Stabilizers[type]:
-			charge = code.Stabilizers[type][measure_qubit]['charge']
-			code.Stabilizers[type][measure_qubit]['charge'] = BP_Channel(charge, dim, self.initialize(p))
+			if measure_qubit not in code.External[type]:
+				charge = code.Stabilizers[type][measure_qubit]['charge']
+				code.Stabilizers[type][measure_qubit]['charge'] = BP_Channel(charge, dim, self.initialize(p))
 		return code
 
 	def Identity(self, code, p):
@@ -85,15 +86,17 @@ class ErrorModel:
 	def Fourier(self, code, type, p):
 		dim = code.dimension
 		for measure_qubit in code.Stabilizers[type]:
-			charge = code.Stabilizers[type][measure_qubit]['charge']
-			code.Stabilizers[type][measure_qubit]['charge'] = BP_Channel(charge, dim, self.initialize(p))
+			if measure_qubit not in code.External[type]:
+				charge = code.Stabilizers[type][measure_qubit]['charge']
+				code.Stabilizers[type][measure_qubit]['charge'] = BP_Channel(charge, dim, self.initialize(p))
 		return code
 
 	def Measure(self, code, type, p):
 		dim = code.dimension
 		for measure_qubit in code.Stabilizers[type]:
-			charge = code.Stabilizers[type][measure_qubit]['charge']
-			code.Stabilizers[type][measure_qubit]['charge'] = BP_Channel(charge, dim, self.measure(p))
+			if measure_qubit not in code.External[type]:
+				charge = code.Stabilizers[type][measure_qubit]['charge']
+				code.Stabilizers[type][measure_qubit]['charge'] = BP_Channel(charge, dim, self.measure(p))
 		return code
 
 	def Sum(self, code, count, num_sides, type, charge_type, p):
@@ -104,13 +107,14 @@ class ErrorModel:
 
 
 		for measure_qubit in code.Stabilizers[type]:
-			measure_charge = code.Stabilizers[type][measure_qubit]['charge']
-			if count in code.Stabilizers[type][measure_qubit]['order']:
-				data_qubit = code.Stabilizers[type][measure_qubit]['order'][count]
-				data_charge = code.Primal.node[data_qubit]['charge']
-				code.Stabilizers[type][measure_qubit]['charge'][charge_type] = (measure_charge[charge_type] + sign * data_charge[charge_type])%dim
-				code.Primal.node[data_qubit]['charge'] = BP_Channel(data_charge, dim, self.sum['control'](p))
-			code.Stabilizers[type][measure_qubit]['charge'] = BP_Channel(measure_charge, dim, self.sum['target'](p))
+			if measure_qubit not in code.External[type]:
+				measure_charge = code.Stabilizers[type][measure_qubit]['charge']
+				if count in code.Stabilizers[type][measure_qubit]['order']:
+					data_qubit = code.Stabilizers[type][measure_qubit]['order'][count]
+					data_charge = code.Primal.node[data_qubit]['charge']
+					code.Stabilizers[type][measure_qubit]['charge'][charge_type] = (measure_charge[charge_type] + sign * data_charge[charge_type])%dim
+					code.Primal.node[data_qubit]['charge'] = BP_Channel(data_charge, dim, self.sum['control'](p))
+				code.Stabilizers[type][measure_qubit]['charge'] = BP_Channel(measure_charge, dim, self.sum['target'](p))
 		return code
 
 

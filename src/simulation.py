@@ -64,7 +64,7 @@ def run(sim, L_vals, p_vals, num_trials):
 	file_name = '../data_runs/' + current_date_time + ".pickle"
 	with open(file_name, 'wb') as handle:
 		pickle.dump(d, handle)
-
+	print str(current_date_time)
 
 
 

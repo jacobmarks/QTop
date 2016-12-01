@@ -30,14 +30,21 @@ L, d, p = 9, 7, 0.0
 
 code = color_codes.Color_6_6_6(L,d)
 
-
-# for m in code.Stabilizers['blue']:
-# 	if len(code.Stabilizers['blue'][m]['data']) == 6:
-# 		d0, d1, d2 = code.Stabilizers['blue'][m]['order'][0], code.Stabilizers['blue'][m]['order'][1], code.Stabilizers['blue'][m]['order'][2]
-# 		code.Primal.node[d0]['charge']['Z'] = 5
-# 		code.Primal.node[d1]['charge']['Z'] = 1
-# 		code.Primal.node[d2]['charge']['Z'] = 3
+# for m in code.External['red']:
+# 	for d in code.Stabilizers['red'][m]['data']:
+# 		code.Primal.node[d]['charge']['Z'] = 1
 # 		break
+# 	break
+
+# print code.hasLogicalError()
+
+for m in code.Stabilizers['blue']:
+	if len(code.Stabilizers['blue'][m]['data']) == 6:
+		d0, d1, d2 = code.Stabilizers['blue'][m]['order'][0], code.Stabilizers['blue'][m]['order'][1], code.Stabilizers['blue'][m]['order'][2]
+		code.Primal.node[d0]['charge']['Z'] = 5
+		# code.Primal.node[d1]['charge']['Z'] = 1
+		code.Primal.node[d2]['charge']['Z'] = 3
+		break
 
 for m in code.Stabilizers['red']:
 	if len(code.Stabilizers['red'][m]['data']) == 6:
@@ -57,7 +64,6 @@ for m in code.Stabilizers['red']:
 model = error_models.CodeCapacity()
 code = code.CodeCycle(model, p)
 
-visualization.PlotPrimal(code, "Before Decoding", 1)
 visualization.PlotPlaquette(code, "Before Decoding", 2)
 
 decoder = GCC_decoder()
