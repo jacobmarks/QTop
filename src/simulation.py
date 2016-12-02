@@ -16,7 +16,7 @@ from common import *
 from error_models import *
 from surface_codes import *
 from color_codes import *
-from threshold import *
+# from threshold import *
 from decoders import decoders
 
 

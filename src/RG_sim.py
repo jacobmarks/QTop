@@ -14,8 +14,8 @@ from common import *
 from surface_codes import *
 from error_models import *
 from decoders import rg
-from visualization import *
-from threshold import *
+# from visualization import *
+# from threshold import *
 from simulation import *
 
 ################## Surface Code Simulation ##################

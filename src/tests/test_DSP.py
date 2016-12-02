@@ -25,15 +25,15 @@ import matplotlib.pyplot as plt
 ##################   Testing ##################
 
 
-L, d, p = 13, 2, 0.04
+L, d, p = 13, 2, 0.02
 
 code = color_codes.Color_6_6_6(L,d)
 model = error_models.CodeCapacity()
 code = code.CodeCycle(model, p)
-# PlotPlaquette(code, "Before Decoding", 1)
+visualization.PlotPlaquette(code, "Before Decoding", 1)
 
 decoder = DSP_decoder()
 code = decoder(code)
-visualization.PlotPrimal(code, "Bound Data", 1)
-# PlotPlaquette(code, "After Decoding", 2)
+# visualization.PlotPrimal(code, "Bound Data", 2)
+visualization.PlotPlaquette(code, "After Decoding", 3)
 plt.show()

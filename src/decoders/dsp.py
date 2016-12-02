@@ -34,9 +34,8 @@ def DSP_Matching(Syndrome, External, dim):
     External_Graph = nx.Graph()
 
     for node in Syndrome.nodes():
-        charge = Syndrome.node[node]['charge']
         external_node = DSP_AssociatedExternal(node, External)
-        External_Graph.add_node(external_node, charge=(-charge) % dim)
+        External_Graph.add_node(external_node)
         weight = - common.euclidean_dist(node, external_node)
         Syndrome.add_edge(*(node, external_node), weight=weight)
 
@@ -118,14 +117,20 @@ class DSP(matching_algorithm):
             errors[type] = code.Syndrome(type, charge_type)
             
 
-        shrunk_errors, matches = {}, {}
+        shrunk_errors, shrunk_exts, matches = {}, {}, {}
         loops_graph = nx.Graph()
         for t1 in code.types:
             comps = [errors[t2] for t2 in code.types if t2 != t1]
-
+            # comp_exts = [node in code.External[t1]errors[t2] for t2 in code.types if t2 != t1]
 
             shrunk_errors[t1] = nx.union(comps[0],comps[1])
-            matches[t1] = DSP_Matching(shrunk_errors[t1], code.External[t1], 2)
+            [t2, t3] = code.complementaryTypes(t1)
+            print t1, t2, t3
+
+            shrunk_exts[t1] = code.External[t2] + code.External[t3]
+            # print shrunk_exts, t1
+            # need to change externals
+            matches[t1] = DSP_Matching(shrunk_errors[t1], shrunk_exts[t1], 2)
 
             for start in matches[t1]:
                 end = matches[t1][start]
@@ -154,7 +159,7 @@ class DSP_decoder(decoder):
 
     def __call__(self, code):
         matching = self.algorithm()
-        for charge_type in ['X','Z']:
+        for charge_type in ['Z']:
             code = matching(code, charge_type)
 
         code = reset_measures(code)
