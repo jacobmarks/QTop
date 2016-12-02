@@ -42,7 +42,7 @@ for m in code.Stabilizers['blue']:
 	if len(code.Stabilizers['blue'][m]['data']) == 6:
 		d0, d1, d2 = code.Stabilizers['blue'][m]['order'][0], code.Stabilizers['blue'][m]['order'][1], code.Stabilizers['blue'][m]['order'][2]
 		code.Primal.node[d0]['charge']['Z'] = 5
-		# code.Primal.node[d1]['charge']['Z'] = 1
+		code.Primal.node[d1]['charge']['Z'] = 1
 		code.Primal.node[d2]['charge']['Z'] = 3
 		break
 

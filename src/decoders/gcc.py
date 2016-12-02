@@ -56,7 +56,7 @@ class GCC(matching_algorithm):
         i = 2
 
         while unclustered_graph.nodes() != []:
-        	print unclustered_graph.nodes(data = True)
+        	print "NODES", unclustered_graph.nodes(data = True)
         	clusters = GCC_Partition(unclustered_graph, i*scale)
         	for cluster in clusters:
 	        	# sys.exit(0)
@@ -84,9 +84,11 @@ def GCC_Partition(UnclusteredGraph, scale):
 def GCC_Annihilate(cluster, code, unclustered_graph, ct, scale):
 	color_clusters = {}
 	for type in code.types:
+		print "TYPE", type
 		color_clusters[type] = [node for node in cluster if node[1]['type'] == type]
+		print "BEFORE", color_clusters[type]
 		color_clusters[type], unclustered_graph, code = GCC_One_Color_Simplify(color_clusters[type], unclustered_graph, code, type, ct)		
-		print color_clusters[type]
+		print "AFTER", color_clusters[type]
 
 
 	color_clusters, unclustered_graph, code = GCC_Two_Color_Simplify(color_clusters, unclustered_graph, code, ct)
@@ -115,6 +117,7 @@ def GCC_One_Color_Transport(s, e, cc, uc, code, t, ct):
 	t1, t2 = code.complementaryTypes(t)
 	dual1 = nx.shortest_path(code.Dual[t1], s[0], e[0])
 	num_loops = (len(dual1)-1)/2
+	print num_loops
 	for i in range(num_loops):
 		start, end = dual1[2*i], dual1[2*i+2]
 		k1, k2 = code.Stabilizers[t][start]['charge'][ct], code.Stabilizers[t][end]['charge'][ct]
@@ -148,8 +151,8 @@ def GCC_One_Color_Transport(s, e, cc, uc, code, t, ct):
 
 
 		end_charge = (k2 + k)%d
-		print "END CHARGE", end_charge
-		# end_charge = (k2 + sign * k)%d
+		# print "END CHARGE", end_charge
+		# end_charge = (k2 - sign * k)%d
 		code.Stabilizers[t][end]['charge'][ct] = end_charge
 
 		if end in uc.nodes():
@@ -202,6 +205,8 @@ def GCC_Connect(ms, cc, uc, code, ct):
 	t1, t2, t3 = 'red', 'blue', 'green'
 	m1, m2, m3 = ms[t1], ms[t2], ms[t3]
 	print ms
+	# sys.exit(0)
+
 
 
 	m1_data = code.Stabilizers['red'][m1[0]]['data']
@@ -215,20 +220,18 @@ def GCC_Connect(ms, cc, uc, code, ct):
 		# sys.exit(0)
 
 	else:
+		print "I told you so!!!!!"
 		for m in code.Stabilizers[t2]:
 			if not any(m in code.External[t] for t in code.External):
 				if any(node in code.Stabilizers[t2][m]['data'] for node in m1_data):
 					break
 
-		c = code.Stabilizers[t2][m]['charge'][ct]
-		m2_new = (m, {'charge':c, 'type':t2})
-
-		if m not in uc.nodes():
-			uc.add_node(m, charge = c, type = t2)
-			cc[t2].append(m2_new)
-
+		m2_new = (m, {'charge':0, 'type':t2})
+		print cc[t2]
 		cc[t2], uc, code = GCC_One_Color_Transport(m2, m2_new, cc[t2], uc, code, t2, ct)
-
+		print cc[t2], "time 2222222"
+	
+	m2_new = cc[t2][0]
 	m2_data = code.Stabilizers[t2][m2_new[0]]['data']
 
 	if any(node in code.Stabilizers[t3][m3[0]]['data'] for node in m1_data) and any(node in code.Stabilizers[t3][m3[0]]['data'] for node in m2_data) and not any(m in code.External[t] for t in code.External):
@@ -241,17 +244,8 @@ def GCC_Connect(ms, cc, uc, code, ct):
 				if any(node in code.Stabilizers[t3][m]['data'] for node in m1_data):
 					if any(node in code.Stabilizers[t3][m]['data'] for node in m2_data):
 						break
-		print m
-		c = code.Stabilizers[t3][m]['charge'][ct]
-		print c
-		m3_new = (m, {'charge':c, 'type':t3})
-		print m3_new
+		m3_new = (m, {'charge':0, 'type':t3})
 
-		if m not in uc.nodes():
-			uc.add_node(m, charge = c, type = t3)
-			cc[t3].append(m3_new)
-
-		print cc[t3]
 		cc[t3], uc, code = GCC_One_Color_Transport(m3, m3_new, cc[t3], uc, code, t3, ct)
 
 
