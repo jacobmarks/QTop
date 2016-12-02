@@ -23,12 +23,9 @@ from simulation import *
 
 model = CodeCapacity()
 decoder = rg.HDRG_decoder()
-L_vals = [3,5,9,11,17]
+L_vals = [3,5,9,11]
 p_vals = np.logspace(-1.8,-.6,20)
 num_trials = 10000
-dims = [2,3,5,13,25]
-
-for d in dims:
-	sim = simulation(d, 'Surface Code', [model, 'Code Capacity'], [decoder, 'RG'])
-	run(sim, L_vals, p_vals, num_trials)
-
+d = 25
+sim = simulation(25, 'Surface Code', [model, 'Code Capacity'], [decoder, 'RG'])
+run(sim, L_vals, p_vals, num_trials)
