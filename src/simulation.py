@@ -51,7 +51,7 @@ def run(sim, L_vals, p_vals, num_trials):
 			errors = 0
 
 			for t in range(num_trials):
-				print 'L', L, 'p', p, 'trial ', t+1, '/', num_trials
+				# print 'L', L, 'p', p, 'trial ', t+1, '/', num_trials
 				if not sim(L,p):
 					errors += 1
 			p_error = float(errors)/num_trials

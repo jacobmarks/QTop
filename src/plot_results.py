@@ -34,7 +34,7 @@ for i in range(num_depths):
 	depth = L[i*num_probs]
 	success_probs = succ[i*num_probs:(i+1)*num_probs - 1]
 	error_probs = [1 - p for p in success_probs]
-	plt.plot(phys_probs, error_probs, label=str(depth))
+	plt.semilogy(phys_probs, error_probs, label=str(depth))
 
 
 X = [phys,L]
@@ -53,7 +53,7 @@ p_err = np.array(error)
 threshold, threshold_uncert = params[0], p_err[0]
 code, decoder, model, trials, dim = d['code_type'], d['decoder_type'], d['model_type'], d['trials'], d['dimension']
 # title = "threshold = " + str(round(threshold, 3)) + "$\pm$" + str(round(threshold_uncert, 3))
-
+print "threshold = " + str(round(threshold, 3)) + "$\pm$" + str(round(threshold_uncert, 3))
 plt.axvline(x=threshold, linewidth=2, color='k', ls = 'dashed', label='threshold')
 title = "d = " + str(dim) + " "+ str(code) + " under " + str(model) + " Error Model"
 plt.title(str(title))
