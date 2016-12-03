@@ -30,13 +30,16 @@ L, d, p = 9, 7, 0.0
 
 code = color_codes.Color_6_6_6(L,d)
 
-for m in code.External['red']:
-	for d in code.Stabilizers['red'][m]['data']:
-		code.Primal.node[d]['charge']['Z'] = 1
-		break
-	break
 
-# print code.hasLogicalError()
+d = (2.5, 2.598)
+code.Primal.node[d]['charge']['Z'] = 2
+
+
+# d = (4.0, 3.464)
+# r, g = code.Primal.node[d]['measures']['red'][0], code.Primal.node[d]['measures']['green'][0]
+# code.Stabilizers['red'][r]['charge']['Z'] = 2
+# code.Stabilizers['green'][g]['charge']['Z'] = 3
+
 
 # for m in code.Stabilizers['blue']:
 # 	if len(code.Stabilizers['blue'][m]['data']) == 6:
@@ -64,9 +67,18 @@ for m in code.External['red']:
 model = error_models.CodeCapacity()
 code = code.CodeCycle(model, p)
 
-visualization.PlotPlaquette(code, "Before Decoding", 2)
+# visualization.PlotPlaquette(code, "Before Decoding", 2)
 
-decoder = GCC_decoder()
-code = decoder(code)
+# decoder = GCC_decoder()
+# code = decoder(code)
+
+# if code.hasLogicalError():
+# 	print "ERROR"
+# else:
+# 	print "GOOD JOB!"
+
 visualization.PlotPlaquette(code, "After Decoding", 3)
 plt.show()
+
+
+

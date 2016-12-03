@@ -29,8 +29,9 @@ class GCC_decoder(decoder):
         # really want ['X', Z'] but this is easier for testing
         for charge_type in ['Z']:
             code = matching(code, charge_type)
-        return code
 
+
+        return code
 
     def algorithm(self):
         return GCC()
@@ -53,9 +54,12 @@ class GCC(matching_algorithm):
         scale = 5*common.euclidean_dist(edge[0], edge[1])
 
         i = 2
+
         while unclustered_graph.nodes() != []:
+        	# print "NODES", unclustered_graph.nodes(data = True)
         	clusters = GCC_Partition(unclustered_graph, i*scale)
         	for cluster in clusters:
+	        	# sys.exit(0)
         		code, unclustered_graph = GCC_Annihilate(cluster, code, unclustered_graph, charge_type, i*scale)
         	i += 1
 
@@ -80,8 +84,12 @@ def GCC_Partition(UnclusteredGraph, scale):
 def GCC_Annihilate(cluster, code, unclustered_graph, ct, scale):
 	color_clusters = {}
 	for type in code.types:
+		# print "TYPE", type
 		color_clusters[type] = [node for node in cluster if node[1]['type'] == type]
+		# print "BEFORE", color_clusters[type]
 		color_clusters[type], unclustered_graph, code = GCC_One_Color_Simplify(color_clusters[type], unclustered_graph, code, type, ct)		
+		# print "AFTER", color_clusters[type]
+
 
 	color_clusters, unclustered_graph, code = GCC_Two_Color_Simplify(color_clusters, unclustered_graph, code, ct)
 	color_clusters, unclustered_graph, code = GCC_Boundary_Simplify(color_clusters, unclustered_graph, code, ct, scale)
@@ -95,6 +103,7 @@ def GCC_One_Color_Simplify(cc, uc, code, t, ct):
 	while len(cc) > 1 :
 		start, end = cc[0], cc[1]
 		cc, uc, code = GCC_One_Color_Transport(start, end, cc, uc, code, t, ct)
+	
 
 	return cc, uc, code
 
@@ -102,13 +111,19 @@ def GCC_One_Color_Simplify(cc, uc, code, t, ct):
 def GCC_One_Color_Transport(s, e, cc, uc, code, t, ct):
 	k = s[1]['charge']
 
+	# need to get k1 each time
+	# and only remove start if charge = 0 afterward
 	d = code.dimension
 	t1, t2 = code.complementaryTypes(t)
 	dual1 = nx.shortest_path(code.Dual[t1], s[0], e[0])
 	num_loops = (len(dual1)-1)/2
+	print num_loops
 	for i in range(num_loops):
 		start, end = dual1[2*i], dual1[2*i+2]
 		k1, k2 = code.Stabilizers[t][start]['charge'][ct], code.Stabilizers[t][end]['charge'][ct]
+		print k1, k2
+		print start, end
+		# sys.exit(0)
 
 		if start in uc:
 			cc.remove((start, {'charge':k1,'type':t}))
@@ -134,37 +149,54 @@ def GCC_One_Color_Transport(s, e, cc, uc, code, t, ct):
 					c = code.Primal.node[data]['charge'][ct]
 					code.Primal.node[data]['charge'][ct] = (c - sign * k)%d
 
+
+
 		end_charge = (k2 + k)%d
 		code.Stabilizers[t][end]['charge'][ct] = end_charge
 
 		if end in uc.nodes():
+			# print "BOWSER"
 			for m in cc:
 				if m[0] == end:
+					# print m, "MMMMMM"
 					cc.remove(m)
 			if end_charge == 0:
+
 				uc.remove_node(end)
 			else:
+				# print "SANTA BABY"
 				uc.node[end]['charge'] = end_charge
 				cc.append((end,{'charge':end_charge,'type':t}))
+
+
 		else:
+			# print "HOLLA"
 			uc.add_node(end, charge = end_charge, type = t)
 			cc.append((end,{'charge':end_charge,'type':t}))	
+
+		print cc, uc.nodes()
 
 	return cc, uc, code
 
 
 def GCC_Two_Color_Simplify(cc, uc, code, ct):
-
+	print "ITS A SMALL WORLD AFTER ALL"
+	print cc
 	if any(cc[t] == [] for t in cc):
+		print "It's a christmas miracle!"
 		return cc, uc, code
 
 	d = code.dimension
 	ms = {}
 	for t in code.types:
 		ms[t] = cc[t][0]
+	print ms
+	# sys.exit(0)
 	triangle, uc, code, ct = GCC_Connect(ms, cc, uc, code, ct)
+	print triangle, "TRIANGLE"
 	uc, code = GCC_Two_Color_Transport(triangle, uc, code, ct)
 	return cc, uc, code
+
 
 
 def GCC_Connect(ms, cc, uc, code, ct):
@@ -172,20 +204,32 @@ def GCC_Connect(ms, cc, uc, code, ct):
 
 	t1, t2, t3 = 'red', 'blue', 'green'
 	m1, m2, m3 = ms[t1], ms[t2], ms[t3]
+	print ms
+	# sys.exit(0)
+
+
 
 	m1_data = code.Stabilizers['red'][m1[0]]['data']
+	# print m1_data
+	# print code.Stabilizers[t2][m2[0]]['data']
+	# sys.exit(0)
 
 	if any(node in code.Stabilizers[t2][m2[0]]['data'] for node in m1_data):
 		m2_new = m2
+		print "HURRAH"
+		# sys.exit(0)
 
 	else:
+		print "I told you so!!!!!"
 		for m in code.Stabilizers[t2]:
 			if not any(m in code.External[t] for t in code.External):
 				if any(node in code.Stabilizers[t2][m]['data'] for node in m1_data):
 					break
 
 		m2_new = (m, {'charge':0, 'type':t2})
+		print cc[t2]
 		cc[t2], uc, code = GCC_One_Color_Transport(m2, m2_new, cc[t2], uc, code, t2, ct)
+		print cc[t2], "time 2222222"
 	
 	m2_new = cc[t2][0]
 	m2_data = code.Stabilizers[t2][m2_new[0]]['data']
@@ -194,6 +238,7 @@ def GCC_Connect(ms, cc, uc, code, ct):
 		m3_new = m3
 
 	else:
+		print "Cherry Tree"
 		for m in code.Stabilizers[t3]:
 			if m not in code.External[t3]:
 				if any(node in code.Stabilizers[t3][m]['data'] for node in m1_data):
@@ -203,16 +248,25 @@ def GCC_Connect(ms, cc, uc, code, ct):
 
 		cc[t3], uc, code = GCC_One_Color_Transport(m3, m3_new, cc[t3], uc, code, t3, ct)
 
+
 	m3_new = cc[t3][0]
 	ms[t2], ms[t3] = m2_new, m3_new
+	print t2, t3
+	print ms
+	# sys.exit(0)
 
 	return ms, uc, code, ct
 
 
+
 def GCC_Two_Color_Transport(triangle, uc, code, ct):
+	print triangle, "HEYYYA"
+	# sys.exit(0)
 	
 	k = triangle['red'][1]['charge']
+	print k
 	r, g, b = triangle['red'][0], triangle['green'][0], triangle['blue'][0]
+	print r, g, b
 	d = code.dimension
 	sides = code.types['red']['sides']
 
@@ -232,6 +286,8 @@ def GCC_Two_Color_Transport(triangle, uc, code, ct):
 	for color in ['green', 'blue']:
 		m = triangle[color][0]
 		c = triangle[color][1]['charge']
+		print c, k, "THIS IS IT"
+		# sys.exit(0)
 		charge = (c - k)%d
 
 		code.Stabilizers[color][m]['charge'][ct] = charge
@@ -240,114 +296,100 @@ def GCC_Two_Color_Transport(triangle, uc, code, ct):
 		else:
 			uc.node[m]['charge'] = charge
 
+
+	print uc
+
 	return uc, code
 
 def GCC_Boundary_Simplify(cc, uc, code, ct, scale):
+	print cc
 	ints = cc['red'] + cc['blue'] + cc['green']
+	print ints
 
 	if len(ints) == 2:
-		cc, uc, code = GCC_Boundary_Two_Color_Simplify(ints, cc, uc, code, ct, scale)
+		[m0, m1] = ints
+		c0, c1 = m0[1]['charge'], m1[1]['charge']
+		t0, t1 = m0[1]['type'], m1[1]['type']
+		print c0, c1
+		if c0 == c1:
+			t2 = code.complementaryType([t0,t1])
+			for ext in code.External[t2]:
+				if any(common.euclidean_dist(ext, m[0]) < scale for m in ints):
+					print ext
+					uc.add_node(ext, charge = c0, type = t2)
+					cc[t2].append((ext,{'charge':c0,'type':t2}))
+					cc, uc, code = GCC_Two_Color_Simplify(cc, uc, code, ct)
+					# then break so we don't do this twice
+					break
+		else:
+			if any(common.euclidean_dist(ext, m0[0]) < scale for ext in code.External[t0]) and any(common.euclidean_dist(ext, m1[0]) < scale for ext in code.External[t1]):
+				print "differentiation is key to..."
+				sys.exit(0)
+		# if c0 = c1, and they are within scale of a boundary of the complementary type
+		# then we can annihilate them.
+
+		# otherwise, we try splitting them up into individual clusters and see if each is within scale of its boundary
+
+	# if len(ints) == 1:
+	# 	m = ints[0]
+	# 	c = m[1]['charge']
+	# 	print c0
+
+	# for t in code.External:
+		
+
+
+	# # Need len 1 case - make this into l2 case and pass along recursively
+
+	# if len(ts) == 2:
+	# 	ms = [cc[t] for t in ts][0]
+	# 	ext_t = code.complementaryType(ts)
+	# 	print ext_t
+	# 	for ext in code.External[ext_t]:
+	# 		if all(common.euclidean_dist(ext, m[0]) < scale for m in ms):
+	# 			cc, uc, code = GCC_Boundary_Two_Color_Transport(ext, cc, uc, code, ct, scale)
+	# 			return cc, uc, code
+		# also the case where we treat each of the two as a separate one_color_transport
+
+	return cc, uc, code
+		
+	
+
+def GCC_Boundary_Two_Color_Transport(ext, cc, uc, code, ct, scale):
+	d = code.dimension
+	[t1, t2] = [t for t in cc if cc[t] != []]
+	node1, node2 = cc[t1][0], cc[t2][0]
+	k1, k2 = node1[1]['charge'], node2[1]['charge']
+
+	cycle = [node1[0], node2[0], ext, node1[0]]
+	loop = path.Path(cycle)
+
+	changed_data = []
+	for data in code.Primal.nodes():
+		if loop.contains_points([data]) == [True]:
+			changed_data.append(data)
+			if data in code.Stabilizers[t1][node1[0]]['data']:
+				count = code.Stabilizers[t1][node1[0]]['data'][data]
+				sign = code.Sign(count)
+	# print changed_data
+	for data in changed_data:
+		c = code.Primal.node[data]['charge'][ct]
+		code.Primal.node[data]['charge'][ct] = (c - sign * k1)%d
+	
+	uc.remove_node(node1[0])
+	cc[t1].remove(node1)
+	code.Stabilizers[t1][node1[0]]['charge'][ct] = 0
+	charge = (k2 - k1)%d
+
+	code.Stabilizers[t2][node2[0]]['charge'][ct] = charge
+	if charge == 0:
+		uc.remove_node(node2[0])
+		cc[t2].remove(node2)
 	else:
-		t, m = ints[0][1]['type'], ints[0][0]
-		print t, m
-		
-		cc, uc, code = GCC_Boundary_One_Color_Simplify(m, cc, uc, code, t, ct, scale)
-
-	for node in uc.nodes():
-		if any(node in code.External[t] for t in code.External):
-			uc.remove_node(node)
-
-	return cc, uc, code
-		
-def GCC_Boundary_One_Color_Simplify(m, cc, uc, code, t, ct, scale):
-	[t1,t2] = code.complementaryTypes(t)
-
-	if any(common.euclidean_dist(ext, m) < scale for ext in code.External[t]):
-		for ext in code.External[t]:
-			if common.euclidean_dist(ext, m) < scale:
-				uc.add_node(ext, charge = 0, type = t)
-				cc[t].append((ext,{'charge':0,'type':t}))
-				cc[t], uc, code = GCC_One_Color_Simplify(cc[t], uc, code, t, ct)		
-				break
-
-	elif any(common.euclidean_dist(ext, m) < scale for ext in code.External[t1]) and any(common.euclidean_dist(ext, m) < scale for ext in code.External[t2]):
-		print "SUCCESS FINALLY!"
-		for ext1 in code.External[t1]:
-			if common.euclidean_dist(ext1, m) < scale:
-				break
-		for ext2 in code.External[t2]:
-			if common.euclidean_dist(ext2, m) < scale:
-				break
-		# find internal nodes connecting to m of complementary colors
-		# and then do individual transports
-
-		for m1 in code.Dual[t1].neighbors(m):
-			if m1 not in code.External[t2]:
-				print m1
-				break
-
-		for m2 in code.Dual[t2].neighbors(m):
-			if m2 not in code.External[t1]:
-				print m2
-				break
-
-		sys.exit(0)
-		# for m1 in code.Stabilizers[t1]:
-		# 	if m1 
-
-		uc.add_node(ext1, charge = 0, type = t1)
-		cc[t1].append((ext1,{'charge':0,'type':t1}))
-
-		uc.add_node(ext2, charge = 0, type = t2)
-		cc[t2].append((ext2,{'charge':0,'type':t2}))
-		print ext1, ext2
-		cc, uc, code = GCC_Two_Color_Simplify(cc, uc, code, ct)
-		print uc.nodes()
-		sys.exit(0)
-	return cc, uc, code 
-
-def GCC_Boundary_Two_Color_Simplify(ints, cc, uc, code, ct, scale):
-	[m0, m1] = ints
-	c0, c1 = m0[1]['charge'], m1[1]['charge']
-	t0, t1 = m0[1]['type'], m1[1]['type']
-
-	if c0 == c1:
-		t2 = code.complementaryType([t0,t1])
-		for ext in code.External[t2]:
-			if any(common.euclidean_dist(ext, m[0]) < scale for m in ints):
-				uc.add_node(ext, charge = c0, type = t2)
-				cc[t2].append((ext,{'charge':c0,'type':t2}))
-				cc, uc, code = GCC_Two_Color_Simplify(cc, uc, code, ct)
-				break
-	elif any(common.euclidean_dist(ext, m0[0]) < scale for ext in code.External[t0]) and any(common.euclidean_dist(ext, m1[0]) < scale for ext in code.External[t1]):
-		for ext0 in code.External[t0]:
-			if common.euclidean_dist(ext0, m0[0]) < scale:
-				break
-		for ext1 in code.External[t1]:
-			if common.euclidean_dist(ext1, m1[0]) < scale:
-				break
-
-		uc.add_node(ext0, charge = 0, type = t0)
-		cc[t0].append((ext0,{'charge':0,'type':t0}))
-
-		uc.add_node(ext1, charge = 0, type = t1)
-		cc[t1].append((ext1,{'charge':0,'type':t1}))
-
-		cc[t0], uc, code = GCC_One_Color_Simplify(cc[t0], uc, code, t0, ct)		
-		cc[t1], uc, code = GCC_One_Color_Simplify(cc[t1], uc, code, t1, ct)
-
-
+		uc.node[node2[0]]['charge'] = charge
+		cc[t2][0]['charge'] = charge
 	
-	
+
+			
+	cc, uc, code = GCC_Boundary_Simplify(cc, uc, code, ct, scale)
 	return cc, uc, code
-
-
-
-
-
-
-
-
-
-
-
