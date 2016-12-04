@@ -19,10 +19,6 @@ sys.path.append('../../')
 from src import common
 import networkx as nx
 import numpy as np
-from src import visualization
-import matplotlib.pyplot as plt
-
-
 
 ################ GCC ###################
 
@@ -98,7 +94,6 @@ def GCC_One_Color_Simplify(cc, uc, code, t, ct):
 	d = code.dimension
 	while len(cc) > 1 :
 		start, end = cc[0], cc[1]
-		print start, end
 		cc, uc, code = GCC_One_Color_Transport(start, end, cc, uc, code, t, ct)
 	return cc, uc, code
 
@@ -106,6 +101,7 @@ def GCC_One_Color_Simplify(cc, uc, code, t, ct):
 def GCC_One_Color_Transport(s, e, cc, uc, code, t, ct):
 	end_sign = 1
 	k, k_end = s[1]['charge'], e[1]['charge']
+	end = e[0]
 
 	d = code.dimension
 	t1, t2 = code.complementaryTypes(t)
@@ -138,7 +134,7 @@ def GCC_One_Color_Transport(s, e, cc, uc, code, t, ct):
 					c = code.Primal.node[data]['charge'][ct]
 					code.Primal.node[data]['charge'][ct] = (c - sign * k)%d
 
-	end_charge = (k2 + end_sign * k)%d
+	end_charge = (k_end + end_sign * k)%d
 	code.Stabilizers[t][end]['charge'][ct] = end_charge
 
 	if end in uc.nodes():
@@ -173,7 +169,6 @@ def GCC_Two_Color_Simplify(cc, uc, code, ct):
 
 def GCC_Connect(ms, cc, uc, code, ct):
 
-	# if 1 is at boundary, then move the other two toward it
 	t1 = 'red'
 	for t in ms:
 		if ms[t][0] in code.External[t]:
@@ -235,7 +230,6 @@ def GCC_Two_Color_Transport(triangle, uc, code, ct):
 			sign = code.Sign(count, sides)
 			code.Primal.node[data]['charge'][ct] = (c - sign * k)%d
 	
-
 	uc.remove_node(m0)
 	code.Stabilizers[t1][m0]['charge'][ct] = 0
 
@@ -307,12 +301,11 @@ def GCC_Boundary_One_Color_Simplify(m, cc, uc, code, t, ct, scale):
 			if ext2 in code.Dual[t1].neighbors(m_new):
 				break
 
-
 		uc.add_node(ext1, charge = 2, type = t1)
 		cc[t1].append((ext1,{'charge':2,'type':t1}))
-
 		uc.add_node(ext2, charge = 2, type = t2)
 		cc[t2].append((ext2,{'charge':2,'type':t2}))
+
 		cc, uc, code = GCC_Two_Color_Simplify(cc, uc, code, ct)
 	return cc, uc, code 
 
@@ -322,38 +315,20 @@ def GCC_Boundary_Two_Color_Simplify(ints, cc, uc, code, ct, scale):
 	t0, t1 = m0[1]['type'], m1[1]['type']
 	if c0 == c1:
 		t2 = code.complementaryType([t0,t1])
-		for ext in code.External[t2]:
-			if any(common.euclidean_dist(ext, m[0]) < scale for m in ints):
-				uc.add_node(ext, charge = c0, type = t2)
-				cc[t2].append((ext,{'charge':c0,'type':t2}))
-				code.Stabilizers[t2][ext]['charge'][ct] = c0
-				cc, uc, code = GCC_Two_Color_Simplify(cc, uc, code, ct)
-				break
+		if any((common.euclidean_dist(ext, m0[0]) < scale and common.euclidean_dist(ext, m1[0]) < scale) for ext in code.External[t2]):
+			for ext in code.External[t2]:
+				if ext in code.Dual[t1].neighbors(m0[0]) and ext in code.Dual[t0].neighbors(m1[0]):
+					break
+			uc.add_node(ext, charge = c0, type = t2)
+			cc[t2].append((ext,{'charge':c0,'type':t2}))
+			code.Stabilizers[t2][ext]['charge'][ct] = c0
+			cc, uc, code = GCC_Two_Color_Simplify(cc, uc, code, ct)
+
 	elif any(common.euclidean_dist(ext, m0[0]) < scale for ext in code.External[t0]) and any(common.euclidean_dist(ext, m1[0]) < scale for ext in code.External[t1]):
-		for ext0 in code.External[t0]:
-			if common.euclidean_dist(ext0, m0[0]) < scale:
-				break
-		for ext1 in code.External[t1]:
-			if common.euclidean_dist(ext1, m1[0]) < scale:
-				break
-
-		uc.add_node(ext0, charge = 0, type = t0)
-		cc[t0].append((ext0,{'charge':0,'type':t0}))
-
-		uc.add_node(ext1, charge = 0, type = t1)
-		cc[t1].append((ext1,{'charge':0,'type':t1}))
-
-		cc[t0], uc, code = GCC_One_Color_Simplify(cc[t0], uc, code, t0, ct)		
-		cc[t1], uc, code = GCC_One_Color_Simplify(cc[t1], uc, code, t1, ct)
-
-
-	
+		cc, uc, code = GCC_Boundary_One_Color_Simplify(m0[0], cc, uc, code, t0, ct, scale)
+		cc, uc, code = GCC_Boundary_One_Color_Simplify(m1[0], cc, uc, code, t1, ct, scale)
 	
 	return cc, uc, code
-
-
-
-
 
 
 
