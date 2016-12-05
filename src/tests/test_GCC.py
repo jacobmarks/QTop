@@ -26,7 +26,7 @@ import matplotlib.pyplot as plt
 ##################   Testing ##################
 
 
-L, d, p = 11, 7, 0.03
+L, d, p = 11, 3, 0.01
 
 code = color_codes.Color_6_6_6(L,d)
 
@@ -59,22 +59,22 @@ code = color_codes.Color_6_6_6(L,d)
 # 			break
 # 	break
 
-model = error_models.CodeCapacity()
-code = code.CodeCycle(model, p)
-
-visualization.PlotPlaquette(code, "Before Decoding", 2)
-
-decoder = GCC_decoder()
-code = decoder(code)
-
+# model = error_models.CodeCapacity()
 # code = code.CodeCycle(model, p)
 
-if code.hasLogicalError():
-	print "ERROR"
-else:
-	print "GOOD JOB!"
+visualization.PlotPlaquette(code, "Color Code Plaquettes",1)
 
-visualization.PlotPlaquette(code, "After Decoding", 3)
+# decoder = GCC_decoder()
+# code = decoder(code)
+
+# # code = code.CodeCycle(model, p)
+
+# if code.hasLogicalError():
+# 	print "ERROR"
+# else:
+# 	print "GOOD JOB!"
+
+# visualization.PlotPlaquette(code, "Logical Error", 6)
 plt.show()
 
 

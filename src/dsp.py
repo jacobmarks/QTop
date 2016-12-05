@@ -20,19 +20,6 @@ import networkx as nx
 import numpy as np
 import itertools
 
-class DSP_decoder(decoder):
-
-    def __call__(self, code):
-        matching = self.algorithm()
-        for charge_type in ['X','Z']:
-            code = matching(code, charge_type)
-
-        code = reset_measures(code)
-        return code
-
-    def algorithm(self):
-        return DSP()
-
 def DSP_Matching(Syndrome, External, dim):
 
     # Fully connect check operators
@@ -94,6 +81,7 @@ class DSP(matching_algorithm):
 
             for start in matches[t1]:
                 end = matches[t1][start]
+                if start in shrunk_exts[t1] or end in shrunk_exts[t1]:
                 chain = DSP_Path(code.Dual[t1], start, end)
                 links = len(chain) -1
 
@@ -105,14 +93,16 @@ class DSP(matching_algorithm):
                     else:
                         loops_graph.add_edge(*edge)
         Exts = code.External['red']+code.External['blue']+code.External['green']
+        
         code, loops_graph = correctLoops(code, loops_graph, charge_type)
-        while hasConnectedBoundaries(code, loops_graph, Exts):
+        while hasConnectedBoundaries(loops_graph, Exts):
             node, ext1, ext2 = connectedBoundaries(loops_graph, Exts)
             code, loops_graph = makeBoundLoop(code, loops_graph, node, ext1, ext2)
             code, loops_graph = correctLoops(code, loops_graph, charge_type)
-            # print node, ext1, ext2
-            # print loops_graph.edges()
+        
         return code
+
+##################### THIS IS FINE #######################
 
 def correctLoops(code, loops_graph, charge_type):
     while nx.cycle_basis(loops_graph) != []:
@@ -136,23 +126,13 @@ def DSP_Path(DualGraph, terminal1, terminal2):
 def DSP_AssociatedExternal(int_node, external_nodes):
     return min(external_nodes, key = lambda x:common.euclidean_dist(int_node, x))
 
-def hasConnectedBoundaries(code, loops_graph, Exts):
+def hasConnectedBoundaries(loops_graph, Exts):
     for node in loops_graph.nodes():
         for ext1 in Exts:
             for ext2 in Exts:
                 if ext1 in loops_graph.nodes() and ext2 in loops_graph.nodes() and node not in Exts:
                     if nx.has_path(loops_graph,node,ext1) and nx.has_path(loops_graph,node,ext2) and ext1 != ext2:
-                        for t in code.types:
-                            if ext1 in code.Stabilizers[t]:
-                                t1 = t
-                            if ext2 in code.Stabilizers[t]:
-                                t2 = t
-                            if node in code.Stabilizers[t]:
-                                t_n = t
-                        if t1 != t2 and t2!=t_n and t_n!=t1:
-                            return True
-                        elif t1 == t2 and t2 == t_n and t_n == t1:
-                            return True
+                        return True
     return False
 
 def connectedBoundaries(loops_graph, Exts):
@@ -193,4 +173,20 @@ def makeDoubleBoundLoop(code, loops_graph, e1, e2, t1, t2):
     loops_graph.add_edge(*(ext1,ext2))
 
     return code, loops_graph
+
+class DSP_decoder(decoder):
+
+    def __call__(self, code):
+        matching = self.algorithm()
+        for charge_type in ['Z']:
+            code = matching(code, charge_type)
+
+        code = reset_measures(code)
+        return code
+
+    def algorithm(self):
+        return DSP()
+
+
+
 

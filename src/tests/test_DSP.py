@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 ##################   Testing ##################
 
 
-L, d, p = 13, 2, 0.02
+L, d, p = 9, 2, 0.02
 
 code = color_codes.Color_6_6_6(L,d)
 model = error_models.CodeCapacity()
