@@ -26,8 +26,7 @@ class GCC_decoder(decoder):
 
     def __call__(self, code):
         matching = self.algorithm()
-        # really want ['X', Z'] but this is easier for testing
-        for charge_type in ['Z']:
+        for charge_type in ['X', 'Z']:
             code = matching(code, charge_type)
         return code
 
@@ -101,7 +100,6 @@ def GCC_One_Color_Simplify(cc, uc, code, t, ct):
 def GCC_One_Color_Transport(s, e, cc, uc, code, t, ct):
 	end_sign = 1
 	k, k_end = s[1]['charge'], e[1]['charge']
-	end = e[0]
 
 	d = code.dimension
 	t1, t2 = code.complementaryTypes(t)
@@ -115,7 +113,30 @@ def GCC_One_Color_Transport(s, e, cc, uc, code, t, ct):
 	for i in range(num_loops):
 		start, end = dual1[2*i], dual1[2*i+2]
 		k1, k2 = code.Stabilizers[t][start]['charge'][ct], code.Stabilizers[t][end]['charge'][ct]
-		
+		if any(start in code.External[type] for type in code.External) and any(end in code.External[type] for type in code.External):
+			mid = dual1[2*i+1]
+			for start_type in code.External:
+				if start in code.External[start_type]:
+					break
+			for end_type in code.External:
+				if start in code.External[end_type]:
+					break
+			for mid_type in code.Stabilizers:
+				if mid in code.Stabilizers[mid_type]:
+					break
+			for data in code.Stabilizers[start_type][start]['data']:
+				if data in code.Stabilizers[mid_type][mid]['data']:
+					c = code.Primal.node[data]['charge'][ct]
+					count = code.Stabilizers[start_type][start]['data'][data]
+					sign = code.Sign(count)
+					code.Primal.node[data]['charge'][ct] = (c - sign * k)%d
+			for data in code.Stabilizers[end_type][end]['data']:
+				if data in code.Stabilizers[mid_type][mid]['data']:
+					c = code.Primal.node[data]['charge'][ct]
+					code.Primal.node[data]['charge'][ct] = (c - sign * k)%d
+			continue
+
+
 		dual2 = nx.shortest_path(code.Dual[t2], end, start)
 		triangle1 = dual1[2*i:(2*i+2)] + dual2[1:]
 		triangle2 =  dual2[:2] + dual1[2*i+1:(2*i+3)]
@@ -135,20 +156,20 @@ def GCC_One_Color_Transport(s, e, cc, uc, code, t, ct):
 					code.Primal.node[data]['charge'][ct] = (c - sign * k)%d
 
 	end_charge = (k_end + end_sign * k)%d
-	code.Stabilizers[t][end]['charge'][ct] = end_charge
+	code.Stabilizers[t][e[0]]['charge'][ct] = end_charge
 
-	if end in uc.nodes():
+	if e[0] in uc.nodes():
 		for m in cc:
-			if m[0] == end:
+			if m[0] == e[0]:
 				cc.remove(m)
 		if end_charge == 0:
-			uc.remove_node(end)
+			uc.remove_node(e[0])
 		else:
-			uc.node[end]['charge'] = end_charge
-			cc.append((end,{'charge':end_charge,'type':t}))
+			uc.node[e[0]]['charge'] = end_charge
+			cc.append((e[0],{'charge':end_charge,'type':t}))
 	else:
-		uc.add_node(end, charge = end_charge, type = t)
-		cc.append((end,{'charge':end_charge,'type':t}))	
+		uc.add_node(e[0], charge = end_charge, type = t)
+		cc.append((e[0],{'charge':end_charge,'type':t}))	
 
 	return cc, uc, code
 
@@ -301,10 +322,10 @@ def GCC_Boundary_One_Color_Simplify(m, cc, uc, code, t, ct, scale):
 			if ext2 in code.Dual[t1].neighbors(m_new):
 				break
 
-		uc.add_node(ext1, charge = 2, type = t1)
-		cc[t1].append((ext1,{'charge':2,'type':t1}))
-		uc.add_node(ext2, charge = 2, type = t2)
-		cc[t2].append((ext2,{'charge':2,'type':t2}))
+		uc.add_node(ext1, charge = c, type = t1)
+		cc[t1].append((ext1,{'charge':c,'type':t1}))
+		uc.add_node(ext2, charge = c, type = t2)
+		cc[t2].append((ext2,{'charge':c,'type':t2}))
 
 		cc, uc, code = GCC_Two_Color_Simplify(cc, uc, code, ct)
 	return cc, uc, code 

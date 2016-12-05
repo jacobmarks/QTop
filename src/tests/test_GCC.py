@@ -26,7 +26,7 @@ import matplotlib.pyplot as plt
 ##################   Testing ##################
 
 
-L, d, p = 9, 7, 0.03
+L, d, p = 11, 7, 0.03
 
 code = color_codes.Color_6_6_6(L,d)
 

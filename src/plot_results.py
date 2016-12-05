@@ -34,7 +34,9 @@ for i in range(num_depths):
 	depth = L[i*num_probs]
 	success_probs = succ[i*num_probs:(i+1)*num_probs - 1]
 	error_probs = [1 - p for p in success_probs]
-	plt.semilogy(phys_probs, error_probs, label=str(depth))
+	# plt.semilogy(phys_probs, error_probs, label=str(depth))
+	plt.loglog(phys_probs, error_probs, label=str(depth))
+	# plt.plot(phys_probs, error_probs, label=str(depth))
 
 
 X = [phys,L]

@@ -16,7 +16,6 @@ from common import *
 from error_models import *
 from surface_codes import *
 from color_codes import *
-# from threshold import *
 from decoders import decoders
 
 
@@ -33,7 +32,7 @@ class simulation:
 		if self.code_type == 'Surface Code':
 			code = SurfaceCode(L, self.dimension)
 		if self.code_type == '6-6-6 Color Code':
-			code = Color666(L, self.dimension)
+			code = Color_6_6_6(L, self.dimension)
 		code = code.CodeCycle(self.model, p)
 		decoders.Decode(code, self.decoder)
 		return code.Assessment()
@@ -43,15 +42,18 @@ def run(sim, L_vals, p_vals, num_trials):
 	L_array, p_phys_array, p_error_array = [], [], []
 	for L in L_vals:
 		pL_error_vals = []
-		for p in p_vals:
+		ps = len(p_vals)
+		for i in range(ps):
+		# for p in p_vals:
+			p = p_vals[i]
 			L_array.append(L)
 			p_phys_array.append(p)
 
 
 			errors = 0
-
+			
 			for t in range(num_trials):
-				# print 'L', L, 'p', p, 'trial ', t+1, '/', num_trials
+				print 'L', L, 'p', i+1, '/', ps, 'trial ', t+1, '/', num_trials
 				if not sim(L,p):
 					errors += 1
 			p_error = float(errors)/num_trials
