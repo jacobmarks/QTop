@@ -53,16 +53,18 @@ plt.show()
 
 which produces the following plot:
 
-![alt text](/visualizations/Kitaev_Toric_Code.png)
+![alt text](/visualizations/plaquette.png)
 
 Black dots represent data qubits. Measurement qubits, which come in types 'red', 'blue', and 'green', lie at the center of each hexagonal stabilizer. The edges of each color are the edges of the dual shrunk lattice of that color. Diamonds of a given color show external 'pseudo' measurement qudits, and their 'pseudo' connections to internal measurement qudits are pictured as dashed lines.
 
-If instead, we wanted to view only the primal lattice (connections between data quditsm we could type:
+If instead, we wanted to view only the primal lattice (connections between data qudits) we could type:
 
 ```python
 visualization.PlotPrimal(code, "Color Code")
 plt.show()
 ```
+
+![alt text](/visualizations/primal.png)
 
 ## Error Models
 
@@ -98,7 +100,7 @@ code = code.CodeCycle(model, p)
 
 after this, errors in our code, i.e. non-trivial eigenvalue measurements, are indicated by stars. The size of the star scales with the magnitude of the error.
 
-![alt text](/visualizations/KTC_with_errors.png)
+![alt text](/visualizations/before_decoding.png)
 
 If we want to find all 'red' measurement qudits with Pauli Z errors, we write
 
@@ -127,11 +129,24 @@ Then we perform error correction by applying this decoder:
 code = decoder(code)
 ```
 
+This leads to the corrected lattice represented below:
+
+![alt text](/visualizations/after_decoding.png)
+
 Finally, we can assess our decoding by checking to see if any logical errors have occurred. 
 
 ```python
 print code.hasLogicalError()
 ```
+
+Our above decoding was successful in returning the code to the codespace, as can be seen by the presence of only combinations of stabilizers in the corrected lattice. This means that there was no logical error. If, instead we had started with the pre-decoding code
+
+![alt text](/visualizations/before_error.png)
+
+our decoding procedure would result in a collection of excitations that anticommutes with the logical operators supported on the code. This is visualized by a string of data excitations connecting boundaries of all three types.
+
+![alt text](/visualizations/after_error.png)
+
 
 ## Putting it all Together
 
