@@ -66,7 +66,6 @@ class ColorCode(Code):
 
 	def generateDual(self):
 
-		# If stabilizer has "external" then add to dual, remove from stabilizers?
 		for type1 in self.Stabilizers:
 			for m1 in self.Stabilizers[type1]:
 				for count in self.Stabilizers[type1][m1]['order']:
@@ -237,15 +236,105 @@ class Color_6_6_6(ColorCode):
 
 		
 
+class Color_4_8_8(ColorCode):
+
+	def __init__(self, depth, dimension = 2):
+		self.code = '4_8_8'
+		ColorCode.__init__(self, depth, dimension)
+
+	def generateCode(self):
+		depth = self.depth
 
 
+		self.types = {}
+		self.types['red'] = {'sides':4, 'scale':float(1)/sqrt(2), 'angle':0}
+		self.types['blue'] = {'sides':8, 'scale':float(1)/(2*sin(float(pi)/8)), 'angle':float(pi)/8}
+		self.types['green'] = {'sides':8,'scale':float(1)/(2*sin(float(pi)/8)), 'angle':float(pi)/8}
 
 
+		for type in self.types:
+			self.Dual[type] = nx.Graph()
+			self.Stabilizers[type] = {}
+			self.External[type] = []
+
+		N = int(float(depth -1)/2)
+		x_dist = round(2 * (float(1)/2 + float(1)/sqrt(2)), 3)
+
+		for j in range(N + 1):
+			for i in range(N + 1 - j):
+				mG = ( round(x_dist * ( 2 * i + j), 3), round(x_dist * j,3))
+				mB = (round(mG[0] + x_dist, 3), mG[1])
+				mR0 = (round(mG[0] - float(x_dist)/2, 3), round(mG[1] + float(x_dist)/2, 3))
+				mR1 = mR0 = (round(mG[0] + float(x_dist)/2, 3), round(mG[1] + float(x_dist)/2, 3))
+				measures = {'red0':mR0, 'red1':mR1, 'blue':mB, 'green':mG}
 
 
+				for m in measures:
+					if m == 'red0' or m == 'red1':
+						t, sides = 'red', 4
+					else:
+						t, sides = m, 8
+
+					if i == 0:
+						if t == 'red':
+							continue
+						elif t == 'green':
+							if j == 0:
+								continue
+							self.External[t].append(measures[m])
+							continue
+
+					if i == N - j:
+						if m == 'mR1':
+							continue
+						if t == 'blue' and j != 0:
+							self.External[t].append(measures[m])
+							continue
+
+					if j == 0:
+						if t != 'red' or i == 0:
+							continue
+						else:
+							self.External[t].append(measures[m])
+							continue
+
+					self.Stabilizers[t][measures[m]] = {'data': {}, 'charge': Charge(), 'order':{}, 'sides':sides}
+					P = self.Plaquette(measures[m], t)
+					for data in P:
+						count = P[data]
+						self.Stabilizers[t][measures[m]]['order'][count] = data
+						self.Stabilizers[t][measures[m]]['data'][data] = count
+						if data not in self.Primal.nodes():
+							self.Primal.add_node(data, charge = Charge())
+							self.Primal.node[data]['measures'] = {'red':[], 'blue':[], 'green':[]}
+						self.Primal.node[data]['measures'][t].append(measures[m])
 
 
+		self.generatePrimalEdges()
 
+
+		for data in self.Primal.nodes():
+			if len([type for type in self.types if self.Primal.node[data]['measures'][type] != []]) == 1:
+				t = [type for type in self.types if self.Primal.node[data]['measures'][type] != []][0]
+				m = self.Primal.node[data]['measures'][t][0]
+				count = self.Stabilizers[t][m]['data'][data]
+				del self.Stabilizers[t][m]['order'][count]
+				del self.Stabilizers[t][m]['data'][data]
+				self.Primal.remove_node(data)
+				continue
+
+		clusters = list(nx.connected_component_subgraphs(self.Primal))
+		# for c in clusters:
+		# 	if len(c.nodes()) < 4:
+		# 		for node in c.nodes():
+		# 			t = [type for type in self.types if self.Primal.node[node]['measures'][type] != []][0]
+		# 			m = self.Primal.node[node]['measures'][t][0]
+		# 			count = self.Stabilizers[t][m]['data'][node]
+		# 			del self.Stabilizers[t][m]['order'][count]
+		# 			del self.Stabilizers[t][m]['data'][node]
+		# 			self.Primal.remove_node(node)
+		# 			continue
+			# print c.nodes()
 
 
 
