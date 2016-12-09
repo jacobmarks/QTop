@@ -12,9 +12,7 @@
 
 import sys
 sys.path.append('../')
-from src import color_codes
-from src import error_models
-from src import visualization
+from src import color_codes, error_models, visualization
 sys.path.append('decoders/')
 from dsp import *
 import networkx as nx

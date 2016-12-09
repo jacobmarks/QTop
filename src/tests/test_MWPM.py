@@ -12,9 +12,7 @@
 
 import sys
 sys.path.append('../')
-from src import surface_codes
-from src import error_models
-from src import visualization
+from src import surface_codes, error_models, visualization
 sys.path.append('decoders/')
 from mwpm import *
 import networkx as nx
@@ -26,7 +24,6 @@ L, d, p = 7, 2, .2
 code = surface_codes.SurfaceCode(L, d)
 model = error_models.CodeCapacity()
 code = code.CodeCycle(model, p)
-print code.Syndrome()
 visualization.PlotPlaquette(code, "Before Decoding", 1)
 
 decoder = MWPM_decoder()

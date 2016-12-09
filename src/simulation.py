@@ -18,15 +18,15 @@ from surface_codes import *
 from color_codes import *
 from decoders import decoders
 
-
 class simulation:
 
-	def __init__(self, dimension, code_type, model, decoder):
+	def __init__(self, dimension, code_type, model, decoder, path_to):
 		self.model = model
 		[self.decoder, self.decoder_type] = decoder
 		[self.model, self.model_type] = model
 		self.dimension = dimension
 		self.code_type = code_type
+		self.path = path_to
 
 	def __call__(self, L, p):
 		if self.code_type == 'Surface Code':
@@ -70,8 +70,9 @@ def run(sim, L_vals, p_vals, num_trials):
 	d['code_type'], d['model_type'], d['decoder_type'] = sim.code_type, sim.model_type, sim.decoder_type
 
 	current_date_time = time.strftime("%c")
+	current_date_time = current_date_time.replace("  ", "_")
 	current_date_time = current_date_time.replace(" ", "_")
-	file_name = '../data_runs/' + current_date_time + ".pickle"
+	file_name = sim.path + current_date_time + ".pickle"
 	with open(file_name, 'wb') as handle:
 		pickle.dump(d, handle)
 	print str(current_date_time)

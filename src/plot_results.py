@@ -20,9 +20,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
-name = str(sys.argv[1])
+name, path_from, path_to = str(sys.argv[1]), str(sys.argv[2]), str(sys.argv[3])
 
-with open('../data_runs/' + name + '.pickle', 'rb') as handle:
+with open(path_from + name + '.pickle', 'rb') as handle:
   d = pickle.load(handle)
 
 succ, phys, L = d['p_succ'], d['p_phys'], d['L']
@@ -35,8 +35,8 @@ for i in range(num_depths):
 	success_probs = succ[i*num_probs:(i+1)*num_probs - 1]
 	error_probs = [1 - p for p in success_probs]
 	# plt.semilogy(phys_probs, error_probs, label=str(depth))
-	plt.loglog(phys_probs, error_probs, label=str(depth))
-	# plt.plot(phys_probs, error_probs, label=str(depth))
+	# plt.loglog(phys_probs, error_probs, label=str(depth))
+	plt.plot(phys_probs, error_probs, label=str(depth))
 
 
 X = [phys,L]
@@ -56,11 +56,11 @@ threshold, threshold_uncert = params[0], p_err[0]
 code, decoder, model, trials, dim = d['code_type'], d['decoder_type'], d['model_type'], d['trials'], d['dimension']
 # title = "threshold = " + str(round(threshold, 3)) + "$\pm$" + str(round(threshold_uncert, 3))
 print "threshold = " + str(round(threshold, 3)) + "$\pm$" + str(round(threshold_uncert, 3))
-plt.axvline(x=threshold, linewidth=2, color='k', ls = 'dashed', label='threshold')
+# plt.axvline(x=threshold, linewidth=2, color='k', ls = 'dashed', label='threshold')
 title = "d = " + str(dim) + " "+ str(code) + " under " + str(model) + " Error Model"
 plt.title(str(title))
 plt.xlabel("Physical Error Rate")
 plt.ylabel("Logical Error Rate")
 plt.legend(loc='upper left', title = "Code Depths")
-plt.savefig('../plots/' + name + '.png')
+plt.savefig(path_to + name + '.png')
 plt.show()

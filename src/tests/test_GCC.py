@@ -12,10 +12,7 @@
 
 import sys
 sys.path.append('../')
-from src import common
-from src import color_codes
-from src import error_models
-from src import visualization
+from src import common, color_codes, error_models, visualization
 sys.path.append('decoders/')
 from gcc import *
 import networkx as nx
@@ -59,22 +56,20 @@ code = color_codes.Color_6_6_6(L,d)
 # 			break
 # 	break
 
-# model = error_models.CodeCapacity()
-# code = code.CodeCycle(model, p)
+model = error_models.CodeCapacity()
+code = code.CodeCycle(model, p)
 
 visualization.PlotPlaquette(code, "Color Code Plaquettes",1)
 
-# decoder = GCC_decoder()
-# code = decoder(code)
+decoder = GCC_decoder()
+code = decoder(code)
 
-# # code = code.CodeCycle(model, p)
+if code.hasLogicalError():
+	print "ERROR"
+else:
+	print "GOOD JOB!"
 
-# if code.hasLogicalError():
-# 	print "ERROR"
-# else:
-# 	print "GOOD JOB!"
-
-# visualization.PlotPlaquette(code, "Logical Error", 6)
+visualization.PlotPlaquette(code, "Logical Error", 6)
 plt.show()
 
 

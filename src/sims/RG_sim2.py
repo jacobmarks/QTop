@@ -9,24 +9,21 @@
  # it under the terms of the GNU General Public License as published by
  # the Free Software Foundation, either version 3 of the License, or
  # (at your option) any later version.
-
-from common import *
-from surface_codes import *
-from error_models import *
+import numpy as np
+import sys
+sys.path.append('../')
+from src import common, simulation, error_models
+sys.path.append('../src')
 from decoders import rg
-# from visualization import *
-# from threshold import *
-from simulation import *
-
 ################## Surface Code Simulation ##################
 
-
-model = CodeCapacity()
+path_to = str(sys.argv[1])
+model = error_models.CodeCapacity()
 decoder = rg.HDRG_decoder()
 L_vals = [3,5,9,11]
 p_vals = np.logspace(-1.8,-.6,20)
 num_trials = 10000
-d = 13
-sim = simulation(13, 'Surface Code', [model, 'Code Capacity'], [decoder, 'RG'])
-run(sim, L_vals, p_vals, num_trials)
+d = 2
+sim = simulation.simulation(d, 'Surface Code', [model, 'Code Capacity'], [decoder, 'RG'], path_to)
+simulation.run(sim, L_vals, p_vals, num_trials)
 
