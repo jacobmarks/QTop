@@ -20,9 +20,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
-name, path_from, path_to = str(sys.argv[1]), str(sys.argv[2]), str(sys.argv[3])
+file_in, file_out = str(sys.argv[1]), str(sys.argv[2])
+mode = str(sys.argv[3]) # linear, loglog or semilog
 
-with open(path_from + name + '.pickle', 'rb') as handle:
+with open(file_in, 'rb') as handle:
   d = pickle.load(handle)
 
 succ, phys, L = d['p_succ'], d['p_phys'], d['L']
@@ -31,13 +32,17 @@ num_probs = len(L)/num_depths
 phys_probs = phys[0:num_probs-1]
 
 for i in range(num_depths):
-	depth = L[i*num_probs]
-	success_probs = succ[i*num_probs:(i+1)*num_probs - 1]
-	error_probs = [1 - p for p in success_probs]
-	# plt.semilogy(phys_probs, error_probs, label=str(depth))
-	plt.loglog(phys_probs, error_probs, label=str(depth))
-	# plt.plot(phys_probs, error_probs, label=str(depth))
-
+    depth = L[i*num_probs]
+    success_probs = succ[i*num_probs:(i+1)*num_probs - 1]
+    error_probs = [1 - p for p in success_probs]
+    if mode == 'loglog':
+        plt.loglog(phys_probs, error_probs, label=str(depth))
+    elif mode == 'semilog':
+        plt.semilogy(phys_probs, error_probs, label=str(depth))
+    elif mode == 'linear':
+        plt.plot(phys_probs, error_probs, label=str(depth))
+    else:
+        raise Exception('Invalid mode. Must be linear, loglog or semilog')
 
 X = [phys,L]
 
@@ -46,10 +51,10 @@ params, pcov = curve_fit(form, X, succ, bounds = param_bounds, max_nfev = 10e7)
 
 error = []
 for i in range(len(params)):
-	try:
-		error.append(np.absolute(pcov[i][i])**0.5)
-	except:
-		error.append( 0.00 )
+    try:
+        error.append(np.absolute(pcov[i][i])**0.5)
+    except:
+        error.append( 0.00 )
 
 p_err = np.array(error)
 threshold, threshold_uncert = params[0], p_err[0]
@@ -62,5 +67,5 @@ plt.title(str(title))
 plt.xlabel("Physical Error Rate")
 plt.ylabel("Logical Error Rate")
 plt.legend(loc='upper left', title = "Code Depths")
-plt.savefig(path_to + name + '.png')
+plt.savefig(file_out)
 plt.show()
