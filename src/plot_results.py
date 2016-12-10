@@ -42,7 +42,7 @@ for i in range(num_depths):
     elif mode == 'linear':
         plt.plot(phys_probs, error_probs, label=str(depth))
     else:
-        raise Exception('Invalid mode. Must be linear, loglog or semilog')
+        raise Exception('Invalid mode. Must be linear, loglog or semilog.')
 
 X = [phys,L]
 
