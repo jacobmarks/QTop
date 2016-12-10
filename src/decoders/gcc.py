@@ -16,7 +16,7 @@ from math import floor
 import sys
 sys.path.append('../')
 sys.path.append('../../')
-from src import common
+from src import common, visualization
 import networkx as nx
 import numpy as np
 
@@ -49,12 +49,13 @@ class GCC(matching_algorithm):
         unclustered_graph = nx.union(s['green'], nx.union(s['red'], s['blue']))
         for edge in code.Primal.edges():
             break
-        scale = 5*common.euclidean_dist(edge[0], edge[1])
+        scale = 2*common.euclidean_dist(edge[0], edge[1])
 
-        i = 2
+        i = 1
         while unclustered_graph.nodes() != []:
         	clusters = GCC_Partition(unclustered_graph, i*scale)
         	for cluster in clusters:
+        		# print cluster
         		code, unclustered_graph = GCC_Annihilate(cluster, code, unclustered_graph, charge_type, i*scale)
         	i += 1
 
@@ -261,7 +262,11 @@ def GCC_Two_Color_Transport(triangle, uc, code, ct):
 
 		code.Stabilizers[color][m]['charge'][ct] = charge
 		if charge == 0:
-			uc.remove_node(m)
+			if m not in uc.nodes():
+				visualization.PlotPlaquette(code, "Logical Error", 2)
+				plt.show()
+			if m in uc.nodes():
+				uc.remove_node(m)
 		else:
 			uc.node[m]['charge'] = charge
 
@@ -294,16 +299,17 @@ def GCC_Boundary_One_Color_Simplify(m, cc, uc, code, t, ct, scale):
 	c = cc[t][0][1]['charge']
 	d = code.dimension
 
-	if any(common.euclidean_dist(ext, m) < scale for ext in code.External[t]):
+	if any(2*common.euclidean_dist(ext, m) < scale for ext in code.External[t]):
 		for ext in code.External[t]:
-			if common.euclidean_dist(ext, m) < scale:
+			if 2*common.euclidean_dist(ext, m) < scale:
 				uc.add_node(ext, charge = d-c, type = t)
 				cc[t].append((ext,{'charge':d-c,'type':t}))
 				code.Stabilizers[t][ext]['charge'][ct] = d-c
 				cc[t], uc, code = GCC_One_Color_Simplify(cc[t], uc, code, t, ct)		
+				# print "CONNECTION", m, ext
 				break
 
-	elif any(common.euclidean_dist(ext, m) < scale for ext in code.External[t1]) and any(common.euclidean_dist(ext, m) < scale for ext in code.External[t2]):
+	elif any(1.5*common.euclidean_dist(ext, m) < scale for ext in code.External[t1]) and any(1.5*common.euclidean_dist(ext, m) < scale for ext in code.External[t2]):
 		if any(ext1 in code.External[t1] for ext1 in code.Dual[t2].neighbors(m)) and any(ext2 in code.External[t2] for ext2 in code.Dual[t1].neighbors(m)):
 			m_new = m
 		else:
@@ -321,7 +327,7 @@ def GCC_Boundary_One_Color_Simplify(m, cc, uc, code, t, ct, scale):
 		for ext2 in code.External[t2]:
 			if ext2 in code.Dual[t1].neighbors(m_new):
 				break
-
+		# print "CONNECTION", m, ext1, ext2
 		uc.add_node(ext1, charge = c, type = t1)
 		cc[t1].append((ext1,{'charge':c,'type':t1}))
 		uc.add_node(ext2, charge = c, type = t2)
@@ -339,13 +345,14 @@ def GCC_Boundary_Two_Color_Simplify(ints, cc, uc, code, ct, scale):
 		if any((common.euclidean_dist(ext, m0[0]) < scale and common.euclidean_dist(ext, m1[0]) < scale) for ext in code.External[t2]):
 			for ext in code.External[t2]:
 				if ext in code.Dual[t1].neighbors(m0[0]) and ext in code.Dual[t0].neighbors(m1[0]):
+					# print "CONNECTION", m0, m1, ext
 					break
 			uc.add_node(ext, charge = c0, type = t2)
 			cc[t2].append((ext,{'charge':c0,'type':t2}))
 			code.Stabilizers[t2][ext]['charge'][ct] = c0
 			cc, uc, code = GCC_Two_Color_Simplify(cc, uc, code, ct)
 
-	elif any(common.euclidean_dist(ext, m0[0]) < scale for ext in code.External[t0]) and any(common.euclidean_dist(ext, m1[0]) < scale for ext in code.External[t1]):
+	elif any(2*common.euclidean_dist(ext, m0[0]) < scale for ext in code.External[t0]) and any(2*common.euclidean_dist(ext, m1[0]) < scale for ext in code.External[t1]):
 		cc, uc, code = GCC_Boundary_One_Color_Simplify(m0[0], cc, uc, code, t0, ct, scale)
 		cc, uc, code = GCC_Boundary_One_Color_Simplify(m1[0], cc, uc, code, t1, ct, scale)
 	

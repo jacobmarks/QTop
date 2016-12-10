@@ -24,8 +24,8 @@ class DSP_decoder(decoder):
 
     def __call__(self, code):
         matching = self.algorithm()
-        # for charge_type in ['X','Z']:
-        for charge_type in ['Z']:
+        for charge_type in ['X','Z']:
+        # for charge_type in ['Z']:
             code = matching(code, charge_type)
 
         code = reset_measures(code)
@@ -73,7 +73,7 @@ def DSP_Matching(Syndrome, External, dim):
             if node not in External or neighbor not in External:
                 Matching[node] = neighbor
 
-    print Matching
+    # print Matching
     return Matching
 
 class DSP(matching_algorithm):
@@ -92,7 +92,7 @@ class DSP(matching_algorithm):
             [t2, t3] = code.complementaryTypes(t1)
             shrunk_errs[t1] = nx.union(errors[t2], errors[t3])
             shrunk_exts[t1] = code.External[t2] + code.External[t3]
-            print t1, shrunk_exts[t1]
+            # print t1, shrunk_exts[t1]
             matches[t1] = DSP_Matching(shrunk_errs[t1], shrunk_exts[t1], 2)
 
             for start in matches[t1]:
@@ -109,22 +109,22 @@ class DSP(matching_algorithm):
                         loops_graph.add_edge(*edge)
         Exts = code.External['red']+code.External['blue']+code.External['green']
         
-        print hasConnectedBoundaries(code, loops_graph, Exts)
-        print "EDGES", loops_graph.edges()
+        # print hasConnectedBoundaries(code, loops_graph, Exts)
+        # print "EDGES", loops_graph.edges()
         # print nx.has_path(loops_graph,(4.5, 2.598), (6.0, 1.732))
 
 
         code, loops_graph = correctLoops(code, loops_graph, charge_type)
         # print "EDGES", loops_graph.edges()
         while hasConnectedBoundaries(code, loops_graph, Exts):
-            print "EDGES", loops_graph.edges()
+            # print "EDGES", loops_graph.edges()
             # print "GOTCHA"
             ext1, ext2 = connectedBoundaries(loops_graph, Exts)
             code, loops_graph = makeBoundLoop(code, loops_graph, ext1, ext2)
             code, loops_graph = correctLoops(code, loops_graph, charge_type)
-            print "REMOVED", loops_graph.edges()
+            # print "REMOVED", loops_graph.edges()
             # print "UN-CONNECTEDS"
-            print ext1, ext2
+            # print ext1, ext2
             # print nx.shortest_path(loops_graph, ext1, ext2)
             # print loops_graph.edges()
         return code
@@ -132,7 +132,7 @@ class DSP(matching_algorithm):
 def correctLoops(code, loops_graph, charge_type):
     while nx.cycle_basis(loops_graph) != []:
         cycle = nx.cycle_basis(loops_graph)[0]
-        print "CYCLE", cycle
+        # print "CYCLE", cycle
         loop = path.Path(cycle)
         for data in code.Primal.nodes():
             if loop.contains_points([data]) == [True]:
@@ -162,7 +162,7 @@ def hasConnectedBoundaries(code, loops_graph, Exts):
                     path = nx.shortest_path(loops_graph, ext1, ext2)
                     for node in path:
                         if node not in Exts:
-                            print ext1, ext2, node
+                            # print ext1, ext2, node
                             return True
     return False
 

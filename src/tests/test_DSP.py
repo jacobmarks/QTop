@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 ##################   Testing ##################
 
 
-L, d, p = 9, 2, 0.02
+L, d, p = 5, 2, 0.04
 
 # d = (2.5, 2.598)
 # code.Primal.node[(4.0, 3.464)]['charge']['Z'] = 5
@@ -40,6 +40,10 @@ visualization.PlotPlaquette(code, "Before Decoding", 1)
 
 decoder = DSP_decoder()
 code = decoder(code)
+if code.hasLogicalError():
+	print "ERROR"
+else:
+	print "GOOD JOB!"
 # visualization.PlotPrimal(code, "Bound Data", 2)
 visualization.PlotPlaquette(code, "After Decoding", 3)
 plt.show()

@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 ##################   Testing ##################
 
 
-L, d, p = 11, 3, 0.01
+L, d, p = 13, 2, 0.04
 
 code = color_codes.Color_6_6_6(L,d)
 
@@ -69,7 +69,7 @@ if code.hasLogicalError():
 else:
 	print "GOOD JOB!"
 
-visualization.PlotPlaquette(code, "Logical Error", 6)
+visualization.PlotPlaquette(code, "Logical Error", 2)
 plt.show()
 
 

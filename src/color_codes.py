@@ -133,7 +133,8 @@ class ColorCode(Code):
 	def hasLogicalError(self):
 		# check if correction commutes or anticommutes with logical operator on boundary
 		d = self.dimension
-		for ct in ['X','Z']:
+		# for ct in ['X','Z']:
+		for ct in ['Z']:
 			Sum = 0
 			for ext in self.External['red']:
 				for data in self.Stabilizers['red'][ext]['data']:
