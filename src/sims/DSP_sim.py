@@ -14,14 +14,14 @@ import sys
 sys.path.append('../')
 from src import common, simulation, error_models
 sys.path.append('../src')
-from decoders import dsp_test
+from decoders import dsp
 ################## Surface Code Simulation ##################
 path_to = str(sys.argv[1])
 model = error_models.CodeCapacity()
 decoder = dsp_test.DSP_decoder()
 L_vals = [5,7,9]
-p_vals = np.logspace(-2,-0.8,10)
-num_trials = 1000
+p_vals = np.logspace(-2.3,-1.5,10)
+num_trials = 10000
 d = 2
 sim = simulation.simulation(d, '6-6-6 Color Code', [model, 'Code Capacity'], [decoder, 'DSP'], path_to)
 simulation.run(sim, L_vals, p_vals, num_trials)

@@ -27,6 +27,31 @@ L, d, p = 13, 2, 0.04
 
 code = color_codes.Color_6_6_6(L,d)
 
+model = error_models.CodeCapacity()
+code = code.CodeCycle(model, p)
+copy = code.Primal.copy()
+
+visualization.PlotPlaquette(code, "Color Code Plaquettes",1)
+
+decoder = GCC_decoder()
+code = decoder(code)
+
+if code.hasLogicalError():
+	print "ERROR"
+	print [node for node in copy.nodes() if copy.node[node]['charge']['Z']!= 0]
+else:
+	print "GOOD JOB!"
+
+visualization.PlotPlaquette(code, "Logical Error", 2)
+plt.show()
+
+
+
+
+
+# datas = [(7.0, 3.464), (14.5, 6.062), (8.5, 4.33), (6.5, 9.526), (6.5, 6.062), (9.5, 11.258)]
+# for dat in datas:
+# 	code.Primal.node[dat]['charge']['Z'] = 1
 
 # d = (2.5, 2.598)
 # code.Primal.node[d]['charge']['Z'] = 2
@@ -55,22 +80,4 @@ code = color_codes.Color_6_6_6(L,d)
 # 			code.Primal.node[d1]['charge']['Z'] = 2
 # 			break
 # 	break
-
-model = error_models.CodeCapacity()
-code = code.CodeCycle(model, p)
-
-visualization.PlotPlaquette(code, "Color Code Plaquettes",1)
-
-decoder = GCC_decoder()
-code = decoder(code)
-
-if code.hasLogicalError():
-	print "ERROR"
-else:
-	print "GOOD JOB!"
-
-visualization.PlotPlaquette(code, "Logical Error", 2)
-plt.show()
-
-
 

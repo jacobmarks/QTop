@@ -52,13 +52,17 @@ class GCC(matching_algorithm):
         scale = 2*common.euclidean_dist(edge[0], edge[1])
 
         i = 1
+        last = []
         while unclustered_graph.nodes() != []:
+        	if last != unclustered_graph.nodes():
+	        	visualization.PlotPlaquette(code, "Logical Error", i+2)
+        	last = unclustered_graph.nodes()
         	clusters = GCC_Partition(unclustered_graph, i*scale)
         	for cluster in clusters:
         		# print cluster
         		code, unclustered_graph = GCC_Annihilate(cluster, code, unclustered_graph, charge_type, i*scale)
         	i += 1
-
+        	
         return code
 
 def GCC_Partition(UnclusteredGraph, scale):
@@ -299,9 +303,9 @@ def GCC_Boundary_One_Color_Simplify(m, cc, uc, code, t, ct, scale):
 	c = cc[t][0][1]['charge']
 	d = code.dimension
 
-	if any(2*common.euclidean_dist(ext, m) < scale for ext in code.External[t]):
+	if any(common.euclidean_dist(ext, m) < scale for ext in code.External[t]):
 		for ext in code.External[t]:
-			if 2*common.euclidean_dist(ext, m) < scale:
+			if common.euclidean_dist(ext, m) < scale:
 				uc.add_node(ext, charge = d-c, type = t)
 				cc[t].append((ext,{'charge':d-c,'type':t}))
 				code.Stabilizers[t][ext]['charge'][ct] = d-c
@@ -309,7 +313,7 @@ def GCC_Boundary_One_Color_Simplify(m, cc, uc, code, t, ct, scale):
 				# print "CONNECTION", m, ext
 				break
 
-	elif any(1.5*common.euclidean_dist(ext, m) < scale for ext in code.External[t1]) and any(1.5*common.euclidean_dist(ext, m) < scale for ext in code.External[t2]):
+	elif any(common.euclidean_dist(ext, m) < scale for ext in code.External[t1]) and any(common.euclidean_dist(ext, m) < scale for ext in code.External[t2]):
 		if any(ext1 in code.External[t1] for ext1 in code.Dual[t2].neighbors(m)) and any(ext2 in code.External[t2] for ext2 in code.Dual[t1].neighbors(m)):
 			m_new = m
 		else:
@@ -352,7 +356,7 @@ def GCC_Boundary_Two_Color_Simplify(ints, cc, uc, code, ct, scale):
 			code.Stabilizers[t2][ext]['charge'][ct] = c0
 			cc, uc, code = GCC_Two_Color_Simplify(cc, uc, code, ct)
 
-	elif any(2*common.euclidean_dist(ext, m0[0]) < scale for ext in code.External[t0]) and any(2*common.euclidean_dist(ext, m1[0]) < scale for ext in code.External[t1]):
+	elif any(common.euclidean_dist(ext, m0[0]) < scale for ext in code.External[t0]) and any(common.euclidean_dist(ext, m1[0]) < scale for ext in code.External[t1]):
 		cc, uc, code = GCC_Boundary_One_Color_Simplify(m0[0], cc, uc, code, t0, ct, scale)
 		cc, uc, code = GCC_Boundary_One_Color_Simplify(m1[0], cc, uc, code, t1, ct, scale)
 	

@@ -9,6 +9,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
+
 import pickle
 import sys
 import time
@@ -35,8 +36,8 @@ for i in range(num_depths):
 	success_probs = succ[i*num_probs:(i+1)*num_probs - 1]
 	error_probs = [1 - p for p in success_probs]
 	# plt.semilogy(phys_probs, error_probs, label=str(depth))
-	plt.loglog(phys_probs, error_probs, label=str(depth))
-	# plt.plot(phys_probs, error_probs, label=str(depth))
+	# plt.loglog(phys_probs, error_probs, label=str(depth))
+	plt.plot(phys_probs, error_probs, label=str(depth))
 
 
 X = [phys,L]

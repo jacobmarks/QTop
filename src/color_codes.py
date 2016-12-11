@@ -15,7 +15,6 @@ import networkx as nx
 # import matplotlib.pyplot as plt
 from common import *
 from error_models import *
-# from visualization import *
 
 
 class ColorCode(Code):

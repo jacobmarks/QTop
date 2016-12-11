@@ -14,7 +14,7 @@ import sys
 sys.path.append('../')
 from src import color_codes, error_models, visualization
 sys.path.append('decoders/')
-from dsp_test import *
+from dsp import *
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
@@ -23,17 +23,9 @@ import matplotlib.pyplot as plt
 ##################   Testing ##################
 
 
-L, d, p = 5, 2, 0.04
-
-# d = (2.5, 2.598)
-# code.Primal.node[(4.0, 3.464)]['charge']['Z'] = 5
-# code.Primal.node[(5.0, 3.464)]['charge']['Z'] = 5
+L, d, p = 9, 2, 0.04
 
 code = color_codes.Color_6_6_6(L,d)
-# print code.Primal.nodes()
-# d = (5.5, 2.598)
-# code.Primal.node[d]['charge']['Z'] = 1
-
 model = error_models.CodeCapacity()
 code = code.CodeCycle(model, p)
 visualization.PlotPlaquette(code, "Before Decoding", 1)
@@ -47,7 +39,4 @@ else:
 # visualization.PlotPrimal(code, "Bound Data", 2)
 visualization.PlotPlaquette(code, "After Decoding", 3)
 plt.show()
-
-
-
 
