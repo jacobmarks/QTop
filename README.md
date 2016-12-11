@@ -12,6 +12,8 @@ double models, as well as color codes in 3-regular planar tilings. In
 the future, I hope to add 3-dimensional color codes, gauge color codes, and 
 more exotic topological systems.
 
+Special thanks to Vlad Gheorghiu for his help with plotting, and Tomas Jochym-O'Connor for help implementing DSP and GCC decoders.
+
 
 Copyright (c) 2016 Jacob Marks, jacob DOT marks AT yale DOT edu.
 
