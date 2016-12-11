@@ -161,7 +161,7 @@ probabilities = np.logspace(-3,-0.5,10)
 trials = 1000
 run(sim, depths, probabilities, trials)
 ```
-This will store a time-stamped pickled file of the logical error rate for each depth-probability combination. If this is stored in the file `data.pickle`, then we can plot out results and obtain a threshold estimate with uncertainties by typing `plot_results.py data` in the command line.
+This will store a time-stamped pickled file of the logical error rate for each depth-probability combination. If this is stored in the file `data.pickle`, then we can plot out results and obtain a threshold estimate with uncertainties by typing `plot_results.py data.pickle output.png mode` in the command line, where `mode` specifies the type of the plot and must be either `linear`, `loglog` or `semilog`.
 
 
 ---
