@@ -19,8 +19,8 @@ from decoders import dsp
 path_to = str(sys.argv[1])
 model = error_models.CodeCapacity()
 decoder = dsp_test.DSP_decoder()
-L_vals = [5,7,9]
-p_vals = np.logspace(-2.3,-1.5,10)
+L_vals = [5,7,9,11]
+p_vals = np.logspace(-2.3,-1.5,20)
 num_trials = 10000
 d = 2
 sim = simulation.simulation(d, '6-6-6 Color Code', [model, 'Code Capacity'], [decoder, 'DSP'], path_to)
