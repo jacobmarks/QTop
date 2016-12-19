@@ -30,7 +30,7 @@ def manhattan_dist(A,B):
     return abs(A[0]-B[0]) + abs(A[1]-B[1])
 
 def euclidean_dist(A,B):
-    return round(pow(abs(A[0]-B[0]),2) + pow(abs(A[1]-B[1]),2),3)
+    return round(pow(pow(abs(A[0]-B[0]),2) + pow(abs(A[1]-B[1]),2),float(1)/2),3)
 
 def Charge(X_charge = 0, Z_charge = 0):
     return {'X':X_charge,'Z':Z_charge}

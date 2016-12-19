@@ -14,7 +14,7 @@ import sys
 sys.path.append('../')
 from src import common, color_codes, error_models, visualization
 sys.path.append('decoders/')
-from gcc import *
+from gcc3 import *
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
@@ -27,8 +27,32 @@ L, d, p = 13, 2, 0.04
 
 code = color_codes.Color_6_6_6(L,d)
 
+
+# for node in code.Primal.nodes():
+# 	if node in [(7.0, 10.392), (11.5, 11.258), (9.5, 7.794), (14.5, 2.598), (8.5, 6.062), (17.5, 2.598), (12.5, 7.794), (9.5, 4.33), (14.0, 6.928), (5.5, 4.33), (11.0, 6.928)]:
+# 		code.Primal.node[node]['charge']['Z'] = 1
+
+
+# for node in code.Primal.nodes():
+# 	if node in [(7.0, 3.464), (13.0, 8.66), (3.5, 2.598), (14.5, 7.794), (7.0, 10.392), (11.5, 9.526), (11.5, 4.33), (16.0, 3.464), (16.0, 5.196)]:
+# 		code.Primal.node[node]['charge']['Z'] = 1
+
+
+# for node in code.Primal.nodes():
+# 	if node in [(7.0, 6.928), (11.5, 7.794), (11.0, 8.66), (8.0, 5.196), (11.0, 12.124), (8.5, 12.99), (9.5, 6.062)]:
+# 		code.Primal.node[node]['charge']['Z'] = 1
+
+# code.Primal.node[(11.5, 6.062)]['charge']['Z'] = 1
+# (2.5, 2.598)
+# code.Primal.node[(3.5, 2.598)]['charge']['Z'] = 1
 model = error_models.CodeCapacity()
+ERR = False
+# visualization.PlotPlaquette(code, "Color Code Plaquettes",1)
+# visualization.PlotPlaquette(code, "Logical Error", 2)
+
 code = code.CodeCycle(model, p)
+
+
 copy = code.Primal.copy()
 
 visualization.PlotPlaquette(code, "Color Code Plaquettes",1)
@@ -36,48 +60,36 @@ visualization.PlotPlaquette(code, "Color Code Plaquettes",1)
 decoder = GCC_decoder()
 code = decoder(code)
 
+ERR = code.hasLogicalError()
+
+visualization.PlotPlaquette(code, "After Error", 2)
+
 if code.hasLogicalError():
 	print "ERROR"
 	print [node for node in copy.nodes() if copy.node[node]['charge']['Z']!= 0]
-else:
-	print "GOOD JOB!"
 
-visualization.PlotPlaquette(code, "Logical Error", 2)
 plt.show()
 
+# while not ERR:
+# 	fig = plt.figure(1)
+# 	fig.clear()
+# 	fig = plt.figure(2)
+# 	fig.clear()
+# 	code = code.CodeCycle(model, p)
 
 
+# 	copy = code.Primal.copy()
 
+# 	visualization.PlotPlaquette(code, "Color Code Plaquettes",1)
 
-# datas = [(7.0, 3.464), (14.5, 6.062), (8.5, 4.33), (6.5, 9.526), (6.5, 6.062), (9.5, 11.258)]
-# for dat in datas:
-# 	code.Primal.node[dat]['charge']['Z'] = 1
+# 	decoder = GCC_decoder()
+# 	code = decoder(code)
 
-# d = (2.5, 2.598)
-# code.Primal.node[d]['charge']['Z'] = 2
-# code.Primal.node[(4.0, 3.464)]['charge']['Z'] = 5
-# code.Primal.node[(5.0, 3.464)]['charge']['Z'] = 5
-
-# for m in code.Stabilizers['blue']:
-# 	if len(code.Stabilizers['blue'][m]['data']) == 6:
-# 		d0, d1, d2 = code.Stabilizers['blue'][m]['order'][0], code.Stabilizers['blue'][m]['order'][1], code.Stabilizers['blue'][m]['order'][2]
-# 		code.Primal.node[d0]['charge']['Z'] = 5
-# 		code.Primal.node[d1]['charge']['Z'] = 1
-# 		code.Primal.node[d2]['charge']['Z'] = 3
-# 		break
-
-# for m in code.Stabilizers['red']:
-# 	if len(code.Stabilizers['red'][m]['data']) == 6:
-# 		d0, d1, d5 = code.Stabilizers['red'][m]['order'][0], code.Stabilizers['red'][m]['order'][1], code.Stabilizers['red'][m]['order'][5]
-# 		code.Primal.node[d0]['charge']['Z'] = 2
-# 		code.Primal.node[d1]['charge']['Z'] = 4
-# 		code.Primal.node[d5]['charge']['Z'] = 3
-# 		break
+# 	ERR = code.hasLogicalError()
 	
-# for m in code.Stabilizers['green']:
-# 	for d1 in code.Plaquette(m,'green'):
-# 		if d1 in code.Primal.nodes():
-# 			code.Primal.node[d1]['charge']['Z'] = 2
-# 			break
-# 	break
+# 	visualization.PlotPlaquette(code, "Logical Error", 2)
+
+# print [node for node in copy.nodes() if copy.node[node]['charge']['Z']!= 0]
+# plt.show()
+
 

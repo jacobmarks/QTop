@@ -85,14 +85,14 @@ class ColorCode(Code):
 	# one step for each data qubit check operation, and a final measurement
 		max_sides = max([self.types[type]['sides'] for type in self.types])
 
+
+		# Initialization
+		for type in self.types:
+			self = model.Initialize(self, type, p)
+		
+		self = model.Identity(self, p)
+
 		for charge_type in ['X','Z']:
-
-			# Initialization
-			for type in self.types:
-				self = model.Initialize(self, type, p)
-			for type in self.types:
-				self = model.Identity(self, p)
-
 			# Stabilizer Check Operations
 			for count in range(max_sides):
 				for type in self.types:
