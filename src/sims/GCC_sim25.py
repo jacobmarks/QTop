@@ -24,5 +24,5 @@ p_vals = np.logspace(-1.1,-.6,10)
 num_trials = 10000
 d = 25
 sim = simulation.simulation(d, '6-6-6 Color Code', [model, 'Code Capacity'], [decoder, 'GCC'], path_to)
-simulations.run(sim, L_vals, p_vals, num_trials)
+simulation.run(sim, L_vals, p_vals, num_trials)
 
