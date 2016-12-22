@@ -268,6 +268,8 @@ def GCC_Two_Color_Transport(triangle, uc, code, ct):
 		if charge == 0:
 			if m in uc.nodes():
 				uc.remove_node(m)
+		elif m not in uc.nodes():
+			uc.add_node(m,charge= charge)
 		else:
 			uc.node[m]['charge'] = charge
 	return uc, code
