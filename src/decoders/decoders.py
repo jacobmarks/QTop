@@ -10,13 +10,11 @@
  # the Free Software Foundation, either version 3 of the License, or
  # (at your option) any later version.
 
-# from common import *
 from matplotlib import path
 from math import floor
 import sys
 sys.path.append('../')
 sys.path.append('../../')
-
 from src import common
 
 ############ Decode function and base decoder classes ############

@@ -15,6 +15,16 @@ from math import *
 from common import *
 
 
+# Function handle: for perfect gates, also performs gate with 0 errors
+PerfectGate = lambda p: [0,0,0]
+
+# For imperfect Gates
+def error_probs(n):
+	return lambda p: [float(p)/n, float(p)/n, float(p)/n]
+
+def phase_error():
+	return lambda p: [0, 0, float(p)]
+
 # Triple [X,Y,Z] of Pauli Error Rates for each gate
 # Fourier generalizes Hadamard to qudits
 # SUM generalizes CNOT to qudits
@@ -46,13 +56,6 @@ def BP_Channel(charge, dim, error_rates):
 		else:
 			charge = pauli_Z(charge, dim)
 	return charge
-
-# Function handle: for perfect gates, also performs gate with 0 errors
-PerfectGate = lambda p: [0,0,0]
-
-# For imperfect Gates
-def error_probs(n):
-	return lambda p: [float(p)/n, float(p)/n, float(p)/n]
 
 class ErrorModel:
 
@@ -117,7 +120,6 @@ class ErrorModel:
 				code.Stabilizers[type][measure_qubit]['charge'] = BP_Channel(measure_charge, dim, self.sum['target'](p))
 		return code
 
-
 class CodeCapacity(ErrorModel):
 	def __init__(self):
 		ErrorModel.__init__(self)
@@ -138,6 +140,7 @@ class CircuitLevel(ErrorModel):
 		self.measure = error_probs(1)
 		self.sum = {'target':error_probs(4), 'control': error_probs(4)}
 
-
-
-
+class PhaseError(ErrorModel):
+	def __init__(self):
+		ErrorModel.__init__(self)
+		self.identity = phase_error()

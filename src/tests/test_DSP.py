@@ -23,10 +23,10 @@ import matplotlib.pyplot as plt
 ##################   Testing ##################
 
 
-L, d, p = 9, 2, 0.04
+L, d, p = 13, 2, 0.08
 
 code = color_codes.Color_6_6_6(L,d)
-model = error_models.CodeCapacity()
+model = error_models.PhaseError()
 code = code.CodeCycle(model, p)
 visualization.PlotPlaquette(code, "Before Decoding", 1)
 

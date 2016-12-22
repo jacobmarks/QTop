@@ -14,13 +14,22 @@ from decoders import *
 from matplotlib import path
 from math import floor
 import sys
+import time
 sys.path.append('../')
 sys.path.append('../../')
-from src import common, visualization
+from src import common
 import networkx as nx
 import numpy as np
 
 ################ GCC ###################
+
+def center(cluster):
+	X = round(np.mean([x for (x,y) in cluster]),3)
+	Y = round(np.mean([y for (x,y) in cluster]),3)
+	return (X,Y)
+
+def closest_to_point(nodes,pt):
+	return min(nodes, key = lambda x:common.euclidean_dist(pt, x))
 
 class GCC_decoder(decoder):
 
@@ -29,7 +38,6 @@ class GCC_decoder(decoder):
         for charge_type in ['X', 'Z']:
             code = matching(code, charge_type)
         return code
-
 
     def algorithm(self):
         return GCC()
@@ -46,21 +54,17 @@ class GCC(matching_algorithm):
         for type in code.types:
             s[type] = code.Syndrome(type, charge_type)
 
-        unclustered_graph = nx.union(s['green'], nx.union(s['red'], s['blue']))
-        for edge in code.Primal.edges():
+        uc = nx.union(s['green'], nx.union(s['red'], s['blue']))
+        for edge in code.Dual['red'].edges():
             break
-        scale = 2*common.euclidean_dist(edge[0], edge[1])
+        scale = common.euclidean_dist(edge[0], edge[1])+.1
 
         i = 1
         last = []
-        while unclustered_graph.nodes() != []:
-        	# if last != unclustered_graph.nodes():
-	        # 	visualization.PlotPlaquette(code, "Logical Error", i+2)
-        	# last = unclustered_graph.nodes()
-        	clusters = GCC_Partition(unclustered_graph, i*scale)
+        while uc.nodes() != []:
+        	clusters = GCC_Partition(uc, i*scale)
         	for cluster in clusters:
-        		# print cluster
-        		code, unclustered_graph = GCC_Annihilate(cluster, code, unclustered_graph, charge_type, i*scale)
+        		code, uc = GCC_Annihilate(cluster, code, uc, charge_type, i*scale)
         	i += 1
         	
         return code
@@ -81,29 +85,47 @@ def GCC_Partition(UnclusteredGraph, scale):
 
 	return Clusters
 
-def GCC_Annihilate(cluster, code, unclustered_graph, ct, scale):
-	color_clusters = {}
+def GCC_Annihilate(cluster, code, uc, ct, scale):
+	pnts = [node[0] for node in cluster]
+	cntr = center(pnts)
+
+	cc = {}
 	for type in code.types:
-		color_clusters[type] = [node for node in cluster if node[1]['type'] == type]
-		color_clusters[type], unclustered_graph, code = GCC_One_Color_Simplify(color_clusters[type], unclustered_graph, code, type, ct)		
+		cc[type] = [node for node in cluster if node[1]['type'] == type]
+		cc[type], uc, code = GCC_One_Color_Simplify(cc[type], uc, code, type, ct, cntr)		
 
-	color_clusters, unclustered_graph, code = GCC_Two_Color_Simplify(color_clusters, unclustered_graph, code, ct)
-	color_clusters, unclustered_graph, code = GCC_Boundary_Simplify(color_clusters, unclustered_graph, code, ct, scale)
+	cc, uc, code = GCC_Two_Color_Simplify(cc, uc, code, ct, cntr)
+	cc, uc, code = GCC_Boundary_Simplify(cc, uc, code, ct, scale, cntr)
 	
-	return code, unclustered_graph
+	return code, uc
 
 
 
-def GCC_One_Color_Simplify(cc, uc, code, t, ct):
+def GCC_One_Color_Simplify(cc, uc, code, t, ct, cntr):
+	if cc == []:
+		return cc, uc, code
+
+	nodes = [node[0] for node in cc]
 	d = code.dimension
-	while len(cc) > 1 :
-		start, end = cc[0], cc[1]
+
+	color_cntr = closest_to_point(code.Stabilizers[t],cntr)
+
+	while any(m[0]!=color_cntr for m in cc):
+		for start in cc:
+			if start[0]!= color_cntr:
+				break
+
+		if any(end[0]==color_cntr for end in cc):
+			for end in cc:
+				if end[0]==color_cntr:
+					break
+		else:
+			end = (color_cntr,{'charge':0,'type':t})
 		cc, uc, code = GCC_One_Color_Transport(start, end, cc, uc, code, t, ct)
 	return cc, uc, code
 
 
 def GCC_One_Color_Transport(s, e, cc, uc, code, t, ct):
-	end_sign = 1
 	k, k_end = s[1]['charge'], e[1]['charge']
 
 	d = code.dimension
@@ -118,29 +140,8 @@ def GCC_One_Color_Transport(s, e, cc, uc, code, t, ct):
 	for i in range(num_loops):
 		start, end = dual1[2*i], dual1[2*i+2]
 		k1, k2 = code.Stabilizers[t][start]['charge'][ct], code.Stabilizers[t][end]['charge'][ct]
-		if any(start in code.External[type] for type in code.External) and any(end in code.External[type] for type in code.External):
-			mid = dual1[2*i+1]
-			for start_type in code.External:
-				if start in code.External[start_type]:
-					break
-			for end_type in code.External:
-				if start in code.External[end_type]:
-					break
-			for mid_type in code.Stabilizers:
-				if mid in code.Stabilizers[mid_type]:
-					break
-			for data in code.Stabilizers[start_type][start]['data']:
-				if data in code.Stabilizers[mid_type][mid]['data']:
-					c = code.Primal.node[data]['charge'][ct]
-					count = code.Stabilizers[start_type][start]['data'][data]
-					sign = code.Sign(count)
-					code.Primal.node[data]['charge'][ct] = (c - sign * k)%d
-			for data in code.Stabilizers[end_type][end]['data']:
-				if data in code.Stabilizers[mid_type][mid]['data']:
-					c = code.Primal.node[data]['charge'][ct]
-					code.Primal.node[data]['charge'][ct] = (c - sign * k)%d
+		if any((start in code.External[type] and end in code.External[type]) for type in code.External):
 			continue
-
 
 		dual2 = nx.shortest_path(code.Dual[t2], end, start)
 		triangle1 = dual1[2*i:(2*i+2)] + dual2[1:]
@@ -160,7 +161,7 @@ def GCC_One_Color_Transport(s, e, cc, uc, code, t, ct):
 					c = code.Primal.node[data]['charge'][ct]
 					code.Primal.node[data]['charge'][ct] = (c - sign * k)%d
 
-	end_charge = (k_end + end_sign * k)%d
+	end_charge = (k_end + k)%d
 	code.Stabilizers[t][e[0]]['charge'][ct] = end_charge
 
 	if e[0] in uc.nodes():
@@ -179,9 +180,8 @@ def GCC_One_Color_Transport(s, e, cc, uc, code, t, ct):
 	return cc, uc, code
 
 
-def GCC_Two_Color_Simplify(cc, uc, code, ct):
+def GCC_Two_Color_Simplify(cc, uc, code, ct, cntr):
 	if any(cc[t] == [] for t in cc):
-
 		return cc, uc, code
 
 	d = code.dimension
@@ -194,7 +194,6 @@ def GCC_Two_Color_Simplify(cc, uc, code, ct):
 
 
 def GCC_Connect(ms, cc, uc, code, ct):
-
 	t1 = 'red'
 	for t in ms:
 		if ms[t][0] in code.External[t]:
@@ -256,7 +255,8 @@ def GCC_Two_Color_Transport(triangle, uc, code, ct):
 			sign = code.Sign(count, sides)
 			code.Primal.node[data]['charge'][ct] = (c - sign * k)%d
 	
-	uc.remove_node(m0)
+	if m0 in uc.nodes():
+		uc.remove_node(m0)
 	code.Stabilizers[t1][m0]['charge'][ct] = 0
 
 	for color in code.complementaryTypes(t1):
@@ -266,25 +266,20 @@ def GCC_Two_Color_Transport(triangle, uc, code, ct):
 
 		code.Stabilizers[color][m]['charge'][ct] = charge
 		if charge == 0:
-			# if m not in uc.nodes():
-				# visualization.PlotPlaquette(code, "Logical Error", 2)
-				# plt.show()
 			if m in uc.nodes():
 				uc.remove_node(m)
 		else:
 			uc.node[m]['charge'] = charge
-
 	return uc, code
 
-def GCC_Boundary_Simplify(cc, uc, code, ct, scale):
+def GCC_Boundary_Simplify(cc, uc, code, ct, scale, cntr):
 	ints = cc['red'] + cc['blue'] + cc['green']
-
 	if len(ints) == 2:
-		cc, uc, code = GCC_Boundary_Two_Color_Simplify(ints, cc, uc, code, ct, scale)
+		cc, uc, code = GCC_Boundary_Two_Color_Simplify(ints, cc, uc, code, ct, scale, cntr)
 	elif len(ints) == 1:
 		t, m = ints[0][1]['type'], ints[0][0]
 		
-		cc, uc, code = GCC_Boundary_One_Color_Simplify(m, cc, uc, code, t, ct, scale)
+		cc, uc, code = GCC_Boundary_One_Color_Simplify(m, cc, uc, code, t, ct, scale, cntr)
 	
 	for node in uc.nodes():
 		if any(node in code.External[t] for t in code.External):
@@ -298,7 +293,7 @@ def GCC_Boundary_Simplify(cc, uc, code, ct, scale):
 				cc[t].remove(ext)
 	return cc, uc, code
 		
-def GCC_Boundary_One_Color_Simplify(m, cc, uc, code, t, ct, scale):
+def GCC_Boundary_One_Color_Simplify(m, cc, uc, code, t, ct, scale, cntr):
 	[t1,t2] = code.complementaryTypes(t)
 	c = cc[t][0][1]['charge']
 	d = code.dimension
@@ -309,8 +304,7 @@ def GCC_Boundary_One_Color_Simplify(m, cc, uc, code, t, ct, scale):
 				uc.add_node(ext, charge = d-c, type = t)
 				cc[t].append((ext,{'charge':d-c,'type':t}))
 				code.Stabilizers[t][ext]['charge'][ct] = d-c
-				cc[t], uc, code = GCC_One_Color_Simplify(cc[t], uc, code, t, ct)		
-				# print "CONNECTION", m, ext
+				cc[t], uc, code = GCC_One_Color_Simplify(cc[t], uc, code, t, ct, cntr)		
 				break
 
 	elif any(common.euclidean_dist(ext, m) < scale for ext in code.External[t1]) and any(common.euclidean_dist(ext, m) < scale for ext in code.External[t2]):
@@ -331,35 +325,75 @@ def GCC_Boundary_One_Color_Simplify(m, cc, uc, code, t, ct, scale):
 		for ext2 in code.External[t2]:
 			if ext2 in code.Dual[t1].neighbors(m_new):
 				break
-		# print "CONNECTION", m, ext1, ext2
 		uc.add_node(ext1, charge = c, type = t1)
 		cc[t1].append((ext1,{'charge':c,'type':t1}))
 		uc.add_node(ext2, charge = c, type = t2)
 		cc[t2].append((ext2,{'charge':c,'type':t2}))
 
-		cc, uc, code = GCC_Two_Color_Simplify(cc, uc, code, ct)
+		cc, uc, code = GCC_Two_Color_Simplify(cc, uc, code, ct, cntr)
 	return cc, uc, code 
 
-def GCC_Boundary_Two_Color_Simplify(ints, cc, uc, code, ct, scale):
+def GCC_Boundary_Two_Color_Simplify(ints, cc, uc, code, ct, scale, cntr):
+	d = code.dimension
 	[m0, m1] = ints
 	c0, c1 = m0[1]['charge'], m1[1]['charge']
 	t0, t1 = m0[1]['type'], m1[1]['type']
+	t2 = code.complementaryType([t0,t1])
 	if c0 == c1:
-		t2 = code.complementaryType([t0,t1])
 		if any((common.euclidean_dist(ext, m0[0]) < scale and common.euclidean_dist(ext, m1[0]) < scale) for ext in code.External[t2]):
-			for ext in code.External[t2]:
-				if ext in code.Dual[t1].neighbors(m0[0]) and ext in code.Dual[t0].neighbors(m1[0]):
-					# print "CONNECTION", m0, m1, ext
-					break
+			if any((ext in code.Dual[t1].neighbors(m0[0]) and ext in code.Dual[t0].neighbors(m1[0])) for ext in code.External[t2]):
+				for ext in code.External[t2]:
+					if ext in code.Dual[t1].neighbors(m0[0]) and ext in code.Dual[t0].neighbors(m1[0]):
+						break
+			else:
+				ext = closest_to_point(code.External[t2],m0[0])
+
 			uc.add_node(ext, charge = c0, type = t2)
 			cc[t2].append((ext,{'charge':c0,'type':t2}))
 			code.Stabilizers[t2][ext]['charge'][ct] = c0
-			cc, uc, code = GCC_Two_Color_Simplify(cc, uc, code, ct)
+			cc, uc, code = GCC_Two_Color_Simplify(cc, uc, code, ct, cntr)
+
+		elif any(common.euclidean_dist(ext, m0[0]) < scale for ext in code.External[t0]) and any(common.euclidean_dist(ext, m1[0]) < scale for ext in code.External[t1]):
+			cc, uc, code = GCC_Boundary_One_Color_Simplify(m0[0], cc, uc, code, t0, ct, scale, cntr)
+			cc, uc, code = GCC_Boundary_One_Color_Simplify(m1[0], cc, uc, code, t1, ct, scale, cntr)
 
 	elif any(common.euclidean_dist(ext, m0[0]) < scale for ext in code.External[t0]) and any(common.euclidean_dist(ext, m1[0]) < scale for ext in code.External[t1]):
-		cc, uc, code = GCC_Boundary_One_Color_Simplify(m0[0], cc, uc, code, t0, ct, scale)
-		cc, uc, code = GCC_Boundary_One_Color_Simplify(m1[0], cc, uc, code, t1, ct, scale)
+		cc, uc, code = GCC_Boundary_One_Color_Simplify(m0[0], cc, uc, code, t0, ct, scale, cntr)
+		cc, uc, code = GCC_Boundary_One_Color_Simplify(m1[0], cc, uc, code, t1, ct, scale, cntr)
 	
+	elif any(common.euclidean_dist(ext, cntr) < scale for ext in code.External[t0]) and any(common.euclidean_dist(ext, cntr) < scale for ext in code.External[t2]):
+		ext = closest_to_point(code.External[t0],m0[0])
+		e = (ext, {'type':t0,'charge':(c0-c1)%d})
+		cc[t0].remove(m0)
+		m0 = (m0[0],{'type':t0,'charge':(c0-c1)%d})
+		uc.node[m0[0]]['charge'] = (c0-c1)%d
+		code.Stabilizers[t0][m0[0]]['charge'][ct]=(c0-c1)%d
+		cc[t0].append(m0)
+
+		cc[t0], uc, code = GCC_One_Color_Transport(m0, e, cc[t0], uc, code, t0, ct)
+		m0 = (m0[0],{'type':t0,'charge':c1})
+		uc.add_node(m0[0], type = t0, charge = c1)
+		code.Stabilizers[t0][m0[0]]['charge'][ct]=c1
+		cc[t0].append(m0)
+		ints = [m0,m1]
+		return GCC_Boundary_Two_Color_Simplify(ints, cc, uc, code, ct, scale, cntr)
+	elif any(common.euclidean_dist(ext, cntr) < scale for ext in code.External[t1]) and any(common.euclidean_dist(ext, cntr) < scale for ext in code.External[t2]):
+		ext = closest_to_point(code.External[t1],m1[0])
+		e = (ext, {'type':t1,'charge':(c1-c0)%d})
+		cc[t1].remove(m1)
+		m1 = (m1[0],{'type':t1,'charge':(c1-c0)%d})
+		uc.node[m1[0]]['charge'] = (c1-c0)%d
+		code.Stabilizers[t1][m1[0]]['charge'][ct]=(c1-c0)%d
+		cc[t1].append(m1)
+
+		cc[t1], uc, code = GCC_One_Color_Transport(m1, e, cc[t1], uc, code, t1, ct)
+		m1 = (m1[0],{'type':t1,'charge':c0})
+		uc.add_node(m1[0], type = t1, charge = c0)
+		code.Stabilizers[t1][m1[0]]['charge'][ct]=c0
+		cc[t1].append(m1)
+		ints = [m0,m1]
+		return GCC_Boundary_Two_Color_Simplify(ints, cc, uc, code, ct, scale, cntr)
+
 	return cc, uc, code
 
 

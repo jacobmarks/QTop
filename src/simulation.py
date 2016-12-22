@@ -12,11 +12,19 @@
 import pickle
 import time
 import random
+import signal
 from common import *
 from error_models import *
 from surface_codes import *
 from color_codes import *
 from decoders import decoders
+
+class TimeoutException(Exception):
+	pass
+
+def timeout_handler(signum, frame):
+	raise TimeoutException
+
 
 class simulation:
 
@@ -29,13 +37,18 @@ class simulation:
 		self.path = path_to
 
 	def __call__(self, L, p):
+		signal.signal(signal.SIGALRM, timeout_handler)
+		signal.alarm(10)
 		if self.code_type == 'Surface Code':
 			code = SurfaceCode(L, self.dimension)
 		if self.code_type == '6-6-6 Color Code':
 			code = Color_6_6_6(L, self.dimension)
 		code = code.CodeCycle(self.model, p)
-		decoders.Decode(code, self.decoder)
-		return code.Assessment()
+		try:
+			decoders.Decode(code, self.decoder)
+			return code.Assessment()
+		except TimeoutException:
+			return self(L, p)
 
 
 def run(sim, L_vals, p_vals, num_trials):
@@ -44,12 +57,9 @@ def run(sim, L_vals, p_vals, num_trials):
 		pL_error_vals = []
 		ps = len(p_vals)
 		for i in range(ps):
-		# for p in p_vals:
 			p = p_vals[i]
 			L_array.append(L)
 			p_phys_array.append(p)
-
-
 			errors = 0
 			
 			for t in range(num_trials):
