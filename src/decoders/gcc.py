@@ -91,7 +91,12 @@ def GCC_Annihilate(cluster, code, uc, ct, scale):
 
 	cc = {}
 	for type in code.types:
-		cc[type] = [node for node in cluster if node[1]['type'] == type]
+		cc[type] = []
+		for node in cluster:
+			if 'type' in node[1]:
+				if node[1]['type'] == type:
+					cc[type].append(node)
+		
 		cc[type], uc, code = GCC_One_Color_Simplify(cc[type], uc, code, type, ct, cntr)		
 
 	cc, uc, code = GCC_Two_Color_Simplify(cc, uc, code, ct, cntr)
