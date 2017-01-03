@@ -22,7 +22,7 @@ model = error_models.CodeCapacity()
 decoder = mwpm.MWPM_decoder()
 sim = simulation.simulation(2, 'Surface Code', [model, 'Code Capacity'], [decoder, 'MWPM'], path_to)
 L_vals = [3,5,9,13]
-p_vals = np.logspace(-1.8,-.6,20)
+p_vals = np.linspace(0.05,0.2,16)
 num_trials = 10000
 simulation.run(sim, L_vals, p_vals, num_trials)
 

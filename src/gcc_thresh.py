@@ -31,5 +31,5 @@ title = "Threshold vs Qudit dimension"
 plt.title(str(title))
 plt.xlabel("Qudit dimension d")
 plt.ylabel("Threshold")
-plt.savefig('../plots/rg_thresh.png')
+plt.savefig('../plots/gcc_thresh.png')
 plt.show()
