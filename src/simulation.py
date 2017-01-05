@@ -49,6 +49,8 @@ class simulation:
 			return code.Assessment()
 		except TimeoutException:
 			return self(L, p)
+		except ValueError:
+			return self(L, p)
 
 
 def run(sim, L_vals, p_vals, num_trials):

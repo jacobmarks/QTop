@@ -219,7 +219,9 @@ def GCC_Connect(ms, cc, uc, code, ct):
 				break
 		m2_new = (m, {'charge':0, 'type':t2})
 		cc[t2], uc, code = GCC_One_Color_Transport(m2, m2_new, cc[t2], uc, code, t2, ct)
-	
+	if cc[t2] == []:
+		print "YO"
+		raise ValueError
 	m2_new = cc[t2][0]
 	m2_data = code.Stabilizers[t2][m2_new[0]]['data']
 	if m1[0] in code.Dual[t2].neighbors(m3[0]) and m2[0] in code.Dual[t1].neighbors(m3[0]):
@@ -235,6 +237,9 @@ def GCC_Connect(ms, cc, uc, code, ct):
 
 		cc[t3], uc, code = GCC_One_Color_Transport(m3, m3_new, cc[t3], uc, code, t3, ct)
 
+	if cc[t3] == []:
+		print "YOO"
+		raise ValueError
 	m3_new = cc[t3][0]
 	ms[t2], ms[t3] = m2_new, m3_new
 

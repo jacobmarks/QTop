@@ -14,14 +14,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 
-L = np.array([0,2,3,5,13,25])
-thresh = np.array([0,.13,.15,.19,.21,.23])
+L = np.array([2,3,5,13,25])
+thresh = np.array([.13,.15,.19,.21,.23])
 plt.plot(L, thresh, '.')
 
-def func(x, a, b, c):
-    return a * np.exp(-b * x) + c
+# def func(x, a, b, c):
+#     return a * np.exp(-b * x) + c
 
-xs = np.linspace(0,25,26)
+# def func(x, a, b, c):
+#     return float(a) /(1 + np.exp(-b* (x - c)))
+def func(x, a, b, c):
+    return a * ( 1 - np.exp(-b * x)) + c
+
+xs = np.linspace(2,30,100)
 popt, pcov = curve_fit(func, L, thresh)
 
 plt.plot(xs, func(xs, *popt), label="Fitted Curve")
