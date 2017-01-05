@@ -21,7 +21,7 @@ model = error_models.CodeCapacity()
 decoder = gcc.GCC_decoder()
 L_vals = [9,11,13]
 p_vals = np.linspace(0.13,0.25,11)
-num_trials = 1000
+num_trials = 10000
 d = 25
 sim = simulation.simulation(d, '6-6-6 Color Code', [model, 'Code Capacity'], [decoder, 'GCC'], path_to)
 simulation.run(sim, L_vals, p_vals, num_trials)
