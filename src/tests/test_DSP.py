@@ -36,7 +36,6 @@ if code.hasLogicalError():
 	print "ERROR"
 else:
 	print "GOOD JOB!"
-# visualization.PlotPrimal(code, "Bound Data", 2)
 visualization.PlotPlaquette(code, "After Decoding", 3)
 plt.show()
 

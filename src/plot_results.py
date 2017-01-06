@@ -49,6 +49,7 @@ X = [phys,L]
 param_bounds=([0,-np.inf,-np.inf,-np.inf,-np.inf,0,-np.inf],[1,np.inf,np.inf,np.inf,np.inf,np.inf,np.inf])
 params, pcov = curve_fit(form, X, succ, bounds = param_bounds, max_nfev = 10e7)
 
+
 error = []
 for i in range(len(params)):
     try:

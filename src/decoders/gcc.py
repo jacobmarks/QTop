@@ -184,10 +184,19 @@ def GCC_One_Color_Transport(s, e, cc, uc, code, t, ct):
 
 	return cc, uc, code
 
+def clean_clusters(cc, uc, code):
+	for t in [t for t in cc if cc[t] != 0]:
+		for m in cc[t]:
+			if m[1]['charge'] == 0:
+				cc[t].remove(m)
+				if m[0] in uc.nodes():
+					uc.remove_node(m[0])
+	return cc, uc, code
+
 
 def GCC_Two_Color_Simplify(cc, uc, code, ct, cntr):
 	if any(cc[t] == [] for t in cc):
-		return cc, uc, code
+		return clean_clusters(cc, uc, code)
 
 	d = code.dimension
 	ms = {}
@@ -199,6 +208,7 @@ def GCC_Two_Color_Simplify(cc, uc, code, ct, cntr):
 
 
 def GCC_Connect(ms, cc, uc, code, ct):
+
 	t1 = 'red'
 	for t in ms:
 		if ms[t][0] in code.External[t]:
@@ -219,8 +229,6 @@ def GCC_Connect(ms, cc, uc, code, ct):
 				break
 		m2_new = (m, {'charge':0, 'type':t2})
 		cc[t2], uc, code = GCC_One_Color_Transport(m2, m2_new, cc[t2], uc, code, t2, ct)
-	if cc[t2] == []:
-		raise ValueError
 	m2_new = cc[t2][0]
 	m2_data = code.Stabilizers[t2][m2_new[0]]['data']
 	if m1[0] in code.Dual[t2].neighbors(m3[0]) and m2[0] in code.Dual[t1].neighbors(m3[0]):
@@ -235,9 +243,6 @@ def GCC_Connect(ms, cc, uc, code, ct):
 		m3_new = (m, {'charge':0, 'type':t3})
 
 		cc[t3], uc, code = GCC_One_Color_Transport(m3, m3_new, cc[t3], uc, code, t3, ct)
-
-	if cc[t3] == []:
-		raise ValueError
 	m3_new = cc[t3][0]
 	ms[t2], ms[t3] = m2_new, m3_new
 
@@ -344,6 +349,7 @@ def GCC_Boundary_One_Color_Simplify(m, cc, uc, code, t, ct, scale, cntr):
 	return cc, uc, code 
 
 def GCC_Boundary_Two_Color_Simplify(ints, cc, uc, code, ct, scale, cntr):
+	cc, uc, code = clean_clusters(cc, uc, code)
 	d = code.dimension
 	[m0, m1] = ints
 	c0, c1 = m0[1]['charge'], m1[1]['charge']
