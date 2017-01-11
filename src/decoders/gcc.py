@@ -16,10 +16,12 @@ from math import floor
 import sys
 import time
 sys.path.append('../')
-sys.path.append('../../')
+# sys.path.append('../../')
+from src import visualization
 from src import common
 import networkx as nx
 import numpy as np
+import matplotlib.pyplot as plt
 
 ################ GCC ###################
 
@@ -60,13 +62,12 @@ class GCC(matching_algorithm):
         scale = common.euclidean_dist(edge[0], edge[1])+.1
 
         i = 1
-        last = []
+
         while uc.nodes() != []:
         	clusters = GCC_Partition(uc, i*scale)
         	for cluster in clusters:
         		code, uc = GCC_Annihilate(cluster, code, uc, charge_type, i*scale)
         	i += 1
-        	
         return code
 
 def GCC_Partition(UnclusteredGraph, scale):

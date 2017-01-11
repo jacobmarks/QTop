@@ -21,17 +21,20 @@ import matplotlib.pyplot as plt
 
 ##################   Testing ##################
 
-L, d, p = 13, 5, 0.1
+L, d, p = 7, 5, 0.06
 
 code = color_codes.Color_6_6_6(L,d)
 
 model = error_models.CodeCapacity()
 code = code.CodeCycle(model, p)
 visualization.PlotPlaquette(code, "Before Decoding", 1)
-
+fldr = 'tests/gcc_exs/ex3/'
+plt.savefig(fldr + 'before' + '.png')
+plt.clf()
 decoder = GCC_decoder()
 code = decoder(code)
 visualization.PlotPlaquette(code, "After Error", 2)
-
-plt.show()
+plt.savefig(fldr + 'after' + '.png')
+plt.clf()
+# plt.show()
 

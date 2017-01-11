@@ -14,22 +14,30 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 
-L = np.array([0,2,3,5,13,25])
-thresh = np.array([0,.13,.15,.19,.21,.23])
-plt.plot(L, thresh, '.')
+L = np.array([2,3,5,8,13,25,50,101])
+sigma = np.ones(8)
+sigma[[-1,-2]] = 0.01
+thresh = np.array([.0975,.118,.145,.162,.165,.167,.1698,.170])
+plt.plot(L, thresh, '.', label="Empirical Data")
+# plt.plot(L, thresh)
 
 def func(x, a, b, c):
-    return a * np.exp(-b * x) + c
+    return a - float(b)/(c + x)
 
-xs = np.linspace(0,25,26)
-popt, pcov = curve_fit(func, L, thresh)
+xs = np.linspace(2,110,1000)
+popt, pcov = curve_fit(func, L, thresh, sigma=sigma)
 
 plt.plot(xs, func(xs, *popt), label="Fitted Curve")
+
+ys = [popt[0]] * 1000
+thr = round(popt[0],3)
+plt.plot(xs, ys, 'r--', label="Plateau at " + str(thr))
 
 
 title = "Threshold vs Qudit dimension"
 plt.title(str(title))
 plt.xlabel("Qudit dimension d")
 plt.ylabel("Threshold")
+plt.legend(loc=4)
 plt.savefig('../plots/gcc_thresh.png')
 plt.show()
