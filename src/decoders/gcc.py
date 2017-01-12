@@ -21,7 +21,6 @@ from src import visualization
 from src import common
 import networkx as nx
 import numpy as np
-import matplotlib.pyplot as plt
 
 ################ GCC ###################
 
