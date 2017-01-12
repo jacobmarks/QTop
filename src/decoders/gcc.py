@@ -17,7 +17,6 @@ import sys
 import time
 sys.path.append('../')
 # sys.path.append('../../')
-from src import visualization
 from src import common
 import networkx as nx
 import numpy as np
