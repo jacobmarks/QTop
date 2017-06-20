@@ -14,18 +14,24 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 
-L = np.array([2,3,5,8,13,25,50,101])
-sigma = np.ones(8)
-sigma[[-1,-2]] = 0.01
-thresh = np.array([.0975,.118,.145,.162,.165,.167,.1698,.170])
-plt.plot(L, thresh, '.', label="Empirical Data")
+L = np.array([2,3,5,8,13,25,50,101,7919])
+# L = np.array([2,3,5,8,13,50,7919])
+
+sigma = np.ones(9)
+# sigma[[-1,-2]] = 0.01
+thresh = np.array([.0975,.118,.145,.162,.165,.167,.1698,.170,.177])
+# thresh = np.array([.0975,.118,.145,.162,.165,.1698,.177])
+
+plt.plot(L[:-1], thresh[:-1], '.', label="Empirical Data")
 # plt.plot(L, thresh)
 
 def func(x, a, b, c):
     return a - float(b)/(c + x)
 
 xs = np.linspace(2,110,1000)
-popt, pcov = curve_fit(func, L, thresh, sigma=sigma)
+# popt, pcov = curve_fit(func, L, thresh, sigma=sigma)
+popt, pcov = curve_fit(func, L, thresh)
+
 
 plt.plot(xs, func(xs, *popt), label="Fitted Curve")
 
@@ -39,5 +45,5 @@ plt.title(str(title))
 plt.xlabel("Qudit dimension d")
 plt.ylabel("Threshold")
 plt.legend(loc=4)
-plt.savefig('../plots/gcc_thresh.png')
+plt.savefig('../plots/gcc_thresh1.png')
 plt.show()
