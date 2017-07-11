@@ -1,5 +1,5 @@
 # QTop
-## Version 0.2 - 01 December 2016
+## Version 0.2 - 11 July 2017
 
 QTop is an open-source python module for simulation and visualization of 
 topological quantum codes. QTop is object-oriented and easy to read,
