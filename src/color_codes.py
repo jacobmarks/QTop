@@ -96,7 +96,7 @@ class ColorCode(Code):
 			for count in range(max_sides):
 				for type in self.types:
 					sides = self.types[type]['sides']
-					self = model.Sum(self, count, sides, type, charge_type, p)
+					self = model.Sum(self, count, sides, type, charge_type, p, p)
 
 			# Measurement
 			for type in self.types:

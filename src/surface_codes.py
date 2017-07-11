@@ -162,7 +162,7 @@ class SurfaceCode(Code):
         for count in range(num_sides):
             for type in self.types:
                 charge_type = type
-                self = model.Sum(self, count, num_sides, type, charge_type, p)
+                self = model.Sum(self, count, num_sides, type, charge_type, p, p)
 
         # # Step 7:
         self = model.Fourier(self, 'X', p)
