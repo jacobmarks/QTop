@@ -21,8 +21,8 @@ path_to = str(sys.argv[1])
 model = error_models.Depolarizing()
 decoder = dsp.DSP_decoder()
 L_vals = [9,11,13]
-p_vals = np.linspace(0.05,0.17,12)
-num_trials = 10000
+p_vals = np.linspace(0.05,0.13,15)
+num_trials = 30000
 d = 2
 sim = simulation.simulation(d, '6-6-6 Color Code', [model, 'Depolarizing Channel'], [decoder, 'DSP'], path_to)
 simulation.run(sim, L_vals, p_vals, num_trials)

@@ -20,9 +20,9 @@ from decoders import rg
 path_to = str(sys.argv[1])
 model = error_models.Depolarizing()
 decoder = rg.HDRG_decoder()
-L_vals = [3,5,7,11]
-p_vals = np.linspace(0.1,0.19,10)
-num_trials = 10000
+L_vals = [7,9,11,13]
+p_vals = np.linspace(0.1,0.17,15)
+num_trials = 30000
 d = 3
 sim = simulation.simulation(d, 'Surface Code', [model, 'Depolarizing Channel'], [decoder, 'RG'], path_to)
 simulation.run(sim, L_vals, p_vals, num_trials)

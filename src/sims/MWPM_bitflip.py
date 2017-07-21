@@ -21,8 +21,8 @@ path_to = str(sys.argv[1])
 model = error_models.BitFlipError()
 decoder = mwpm.MWPM_decoder()
 sim = simulation.simulation(2, 'Surface Code', [model, 'Bit Flip Channel'], [decoder, 'MWPM'], path_to)
-L_vals = [3,5,9,13]
-p_vals = np.linspace(0.08,0.2,10)
-num_trials = 1000
+L_vals = [3,5,7,9,11,13]
+p_vals = np.linspace(0.1,0.7,15)
+num_trials = 30000
 simulation.run(sim, L_vals, p_vals, num_trials)
 

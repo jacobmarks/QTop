@@ -20,9 +20,9 @@ from decoders import rg
 path_to = str(sys.argv[1])
 model = error_models.BitFlip()
 decoder = rg.HDRG_decoder()
-L_vals = [3,5,9,11]
-p_vals = np.linspace(0.18,0.32,13)
-num_trials = 10000
+L_vals = [9,11,13]
+p_vals = np.linspace(0.1,0.19,15)
+num_trials = 30000
 d = 100
 sim = simulation.simulation(d, 'Surface Code', [model, 'Bit Flip Channel'], [decoder, 'RG'], path_to)
 simulation.run(sim, L_vals, p_vals, num_trials)
