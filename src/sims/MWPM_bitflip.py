@@ -18,11 +18,11 @@ from decoders import mwpm
 ################## Surface Code Simulation ##################
 
 path_to = str(sys.argv[1])
-model = error_models.BitFlipError()
+model = error_models.BitFlip()
 decoder = mwpm.MWPM_decoder()
 sim = simulation.simulation(2, 'Surface Code', [model, 'Bit Flip Channel'], [decoder, 'MWPM'], path_to)
 L_vals = [3,5,7,9,11,13]
-p_vals = np.linspace(0.1,0.7,15)
+p_vals = np.linspace(0.04,0.1,15)
 num_trials = 30000
 simulation.run(sim, L_vals, p_vals, num_trials)
 
