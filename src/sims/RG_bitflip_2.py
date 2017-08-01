@@ -22,7 +22,7 @@ model = error_models.BitFlip()
 decoder = rg.HDRG_decoder()
 L_vals = [9,11,13]
 p_vals = np.linspace(0.06,0.12,15)
-num_trials = 30000
+num_trials = 50000
 d = 2
 sim = simulation.simulation(d, 'Surface Code', [model, 'Bit Flip Channel'], [decoder, 'RG'], path_to)
 simulation.run(sim, L_vals, p_vals, num_trials)

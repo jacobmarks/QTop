@@ -20,8 +20,8 @@ path_to = str(sys.argv[1])
 model = error_models.BitFlip()
 decoder = gcc.GCC_decoder()
 L_vals = [9,11,13]
-p_vals = np.linspace(0.06,0.13,15)
-num_trials = 30000
+p_vals = np.linspace(0.05,0.11,15)
+num_trials = 50000
 d = 3
 sim = simulation.simulation(d, '6-6-6 Color Code', [model, 'Bit Flip Channel'], [decoder, 'GCC'], path_to)
 simulation.run(sim, L_vals, p_vals, num_trials)
