@@ -27,9 +27,9 @@ class ColorCode(Code):
 		self.colors = {'red':'red', 'blue':'blue', 'green':'green', 'data':'black'}
 		
 	def complementaryType(self, types):
-		for type in self.types:
-			if type not in types:
-				complement = type
+		for t in self.types:
+			if t not in types:
+				complement = t
 		return complement
 
 	def complementaryTypes(self, type):
@@ -204,9 +204,9 @@ class Color_6_6_6(ColorCode):
 
 		self.generatePrimalEdges()
 
-		for data in self.Primal.nodes():
-			if len([type for type in self.types if self.Primal.node[data]['measures'][type] != []]) == 1:
-				t = [type for type in self.types if self.Primal.node[data]['measures'][type] != []][0]
+		for data in list(self.Primal.nodes()):
+			if len([tpe for tpe in self.types if self.Primal.node[data]['measures'][tpe] != []]) == 1:
+				t = [tpe for tpe in self.types if self.Primal.node[data]['measures'][tpe] != []][0]
 				m = self.Primal.node[data]['measures'][t][0]
 				count = self.Stabilizers[t][m]['data'][data]
 				del self.Stabilizers[t][m]['order'][count]
@@ -214,9 +214,9 @@ class Color_6_6_6(ColorCode):
 				self.Primal.remove_node(data)
 				continue
 
-		for data in self.Primal.nodes():
-			for type in self.External:
-				p0, p1 = self.External[type][0:2]
+		for data in list(self.Primal.nodes()):
+			for tpe in self.External:
+				p0, p1 = self.External[tpe][0:2]
 				if data not in self.Primal.nodes():
 					break
 
