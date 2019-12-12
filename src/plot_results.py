@@ -65,7 +65,7 @@ threshold, threshold_uncert = params[0], p_err[0]
 code, decoder, model, trials, dim = d['code_type'], d['decoder_type'], d['model_type'], d['trials'], d['dimension']
 # title = "threshold = " + str(round(threshold, 3)) + "$\pm$" + str(round(threshold_uncert, 3))
 print "threshold = " + str(round(threshold, 3)) + "$\pm$" + str(round(threshold_uncert, 3))
-# plt.axvline(x=threshold, linewidth=2, color='k', ls = 'dashed', label='threshold')
+plt.axvline(x=sys.argv[4], linewidth=2, color='k', ls = 'dashed', label='threshold')
 title = "d = " + str(dim) + " "+ str(code) + " under " + str(model) + " Error Model"
 plt.title(str(title))
 plt.xlabel("Physical Error Rate")
