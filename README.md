@@ -1,4 +1,7 @@
 # QTop
+# *** NOTE: This software is not being actively maintained. Use at your own risk.
+
+
 ## Version 0.3 - 11 July 2017
 
 QTop is an open-source python module for simulation and visualization of 
